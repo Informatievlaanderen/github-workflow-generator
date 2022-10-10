@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <LanguageVersion>preview</LanguageVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Stubble.Core" Version="1.10.8" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "GithubWorkflowGenerator.Console": {
+      "commandName": "Project",
+      "commandLineArgs": "build --help"
+    }
+  }
+}
