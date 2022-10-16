@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace GithubWorkflowGenerator.Core;
+namespace GithubWorkflowGenerator.Core.Options;
 
 public record ReleaseGeneratorOptions(string RepositoryName, string RepositoryPrefix, IEnumerable<string> BuildArtifacts, IEnumerable<NuGetArtifactAndPackage> NuGetPackages, string LambdaSourceFolder,
     EnvironmentOptions Test, EnvironmentOptions Staging, EnvironmentOptions Production);

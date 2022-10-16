@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using GithubWorkflowGenerator.Core;
+using GithubWorkflowGenerator.Core.Options;
 
 namespace GithubWorkflowGenerator.Console.Commands.Release;
 
@@ -60,7 +61,7 @@ internal class ReleaseCommand : Command
         : base(name, description)
     { }
         
-    private static async Task Handle(string fileName, string repositoryName, string repositoryPrefix, List<string> buildArtifacts, Dictionary<string, string> nugetPackages, string lambdaSourceFolder,
+    private static async Task Handle(string fileName, string repositoryName, string repositoryPrefix, IEnumerable<string> buildArtifacts, Dictionary<string, string> nugetPackages, string lambdaSourceFolder,
         string testPublishFolderForLambda, string testS3BucketForLambda, IEnumerable<string> testServiceMatrix,
         string stagingPublishFolderForLambda, string stagingS3BucketForLambda, IEnumerable<string> stagingServiceMatrix,
         string productionPublishFolderForLambda, string productionS3BucketForLambda, IEnumerable<string> productionServiceMatrix)

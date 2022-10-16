@@ -1,5 +1,5 @@
 using System.Threading.Tasks;
-using FluentAssertions;
+using GithubWorkflowGenerator.Core.Options;
 using Xunit;
 
 namespace GithubWorkflowGenerator.Core.Tests;
@@ -108,7 +108,7 @@ jobs:
         var result = await new GithubGenerator().GenerateBuildWorkflowAsync(options);
 
         Assert.NotNull(result);
-        result.Should().BeEquivalentTo(expected);
+        Assert.Equal(expected.ExceptCharacters(new []{ '#', ' ', '\r', '\n' }), result.ExceptCharacters(new []{ '#', ' ', '\r', '\n' }));
     }
 
     [Fact]
@@ -1344,6 +1344,157 @@ jobs:
                 "s3://s3-vbr-prd-basisregisters-lam-sr-sqsbackofficehandlerfunction",
                 new[] { "streetname-registry-api", "streetname-registry-import-api", "streetname-registry-projections" }));
         var result = await new GithubGenerator().GenerateReleaseWorkflowAsync(options);
+
+        Assert.NotNull(result);
+        Assert.Equal(expected.ExceptCharacters(new []{ '#', ' ', '\r', '\n' }), result.ExceptCharacters(new []{ '#', ' ', '\r', '\n' }));
+    }
+
+    [Fact]
+    public async Task GenerateReleaseLibWorkflow()
+    {
+        const string expected = @"name: Release Library
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    if: github.repository_owner == 'Informatievlaanderen'
+    name: Build
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Cache NPM
+      uses: actions/cache@v3
+      env:
+        cache-name: cache-npm
+      with:
+        path: ~/.npm
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ env.cache-name }}-
+
+    - name: Cache Paket
+      uses: actions/cache@v3
+      env:
+        cache-name: cache-paket
+      with:
+        path: packages
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('paket.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ env.cache-name }}-
+          
+    - name: Cache Python
+      uses: actions/cache@v3
+      env:
+        cache-name: cache-pip
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-build-${{ env.cache-name }}
+
+    - name: Parse repository name
+      run: echo REPOSITORY_NAME=$(echo ""$GITHUB_REPOSITORY"" | awk -F / '{print $2}' | sed -e ""s/:refs//"") >> $GITHUB_ENV
+      shell: bash
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v2
+      with:
+        dotnet-version: ${{ secrets.VBR_DOTNET_VERSION }}
+
+    - name: Set up Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.x'
+
+    - name: Node version
+      shell: bash
+      run: node --version
+
+    - name: .NET version
+      shell: bash
+      run: dotnet --info
+
+    - name: Python version
+      shell: bash
+      run: python --version
+
+    - name: Install NPM dependencies
+      shell: bash
+      run: npm ci
+
+    - name: Install Python dependencies
+      shell: bash
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests markdown argparse
+        
+    - name: Run Semantic Release
+      shell: bash
+      run: npx semantic-release
+      env:
+        BUILD_DOCKER_REGISTRY: ${{ secrets.VBR_BUILD_DOCKER_REGISTRY_TST }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GIT_COMMIT: ${{ github.sha }}
+        GIT_USERNAME: ${{ secrets.VBR_GIT_USER }}
+        GIT_AUTHOR_NAME: ${{ secrets.VBR_GIT_USER }}
+        GIT_COMMITTER_NAME: ${{ secrets.VBR_GIT_USER }}
+        GIT_EMAIL: ${{ secrets.VBR_GIT_EMAIL }}
+        GIT_AUTHOR_EMAIL: ${{ secrets.VBR_GIT_EMAIL }}
+        GIT_COMMITTER_EMAIL: ${{ secrets.VBR_GIT_EMAIL }}
+        
+    - name: Set Release Version
+      run: |
+        [ ! -f semver ] && echo none > semver
+        echo RELEASE_VERSION=$(cat semver) >> $GITHUB_ENV
+      shell: bash
+
+    - name: Publish packages to NuGet
+      if: env.RELEASE_VERSION != 'none'
+      shell: bash
+      run: |
+        dotnet nuget push dist/Be.Vlaanderen.Basisregisters.Sqs/Be.Vlaanderen.Basisregisters.Sqs.$SEMVER.nupkg  --source nuget.org --api-key $NUGET_API_KEY
+        dotnet nuget push dist/Be.Vlaanderen.Basisregisters.Sqs.Lambda/Be.Vlaanderen.Basisregisters.Sqs.Lambda.$SEMVER.nupkg  --source nuget.org --api-key $NUGET_API_KEY
+      env:
+        SEMVER: ${{ env.RELEASE_VERSION }}
+        WORKSPACE: ${{ github.workspace }}
+        NUGET_HOST: ${{ secrets.NUGET_HOST }}
+        NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+
+    - name: Publish to Confluence
+      if: env.RELEASE_VERSION != 'none'
+      shell: bash
+      run: ./packages/Be.Vlaanderen.Basisregisters.Build.Pipeline/Content/ci-confluence.sh
+      env:
+        CONFLUENCE_TITLE: ${{ env.REPOSITORY_NAME }}
+        CONFLUENCE_USERNAME: ${{ secrets.VBR_CONFLUENCE_USER }}
+        CONFLUENCE_PASSWORD: ${{ secrets.VBR_CONFLUENCE_PASSWORD }}
+
+    - name: Create Jira Release
+      if: env.RELEASE_VERSION != 'none'
+      shell: bash
+      run: ./packages/Be.Vlaanderen.Basisregisters.Build.Pipeline/Content/ci-jira.sh
+      env:
+        CONFLUENCE_TITLE: ${{ env.REPOSITORY_NAME }}
+        CONFLUENCE_USERNAME: ${{ secrets.VBR_CONFLUENCE_USER }}
+        CONFLUENCE_PASSWORD: ${{ secrets.VBR_CONFLUENCE_PASSWORD }}
+        JIRA_PREFIX: Address
+        JIRA_PROJECT: GAWR
+        JIRA_VERSION: ${{ env.RELEASE_VERSION }}
+";
+
+        var options = new ReleaseLibGeneratorOptions(
+            new[]
+            { 
+                "Be.Vlaanderen.Basisregisters.Sqs",
+                "Be.Vlaanderen.Basisregisters.Sqs.Lambda"
+            });
+        var result = await new GithubGenerator().GenerateReleaseLibWorkflowAsync(options);
 
         Assert.NotNull(result);
         Assert.Equal(expected.ExceptCharacters(new []{ '#', ' ', '\r', '\n' }), result.ExceptCharacters(new []{ '#', ' ', '\r', '\n' }));

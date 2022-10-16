@@ -2,6 +2,7 @@
 using System.IO;
 using System.Threading.Tasks;
 using GithubWorkflowGenerator.Core;
+using GithubWorkflowGenerator.Core.Options;
 
 namespace GithubWorkflowGenerator.Console.Commands.Build;
 

@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace GithubWorkflowGenerator.Core;
+namespace GithubWorkflowGenerator.Core.Options;
 
 public record BuildGeneratorOptions(string SolutionName, string SonarKey);
 
