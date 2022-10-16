@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Threading.Tasks;
 using GithubWorkflowGenerator.Core.Options;
 using Stubble.Core.Builders;
