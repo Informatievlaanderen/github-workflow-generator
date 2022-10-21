@@ -12,6 +12,16 @@ jobs:
     outputs:
       version: ${{ steps.set-version.outputs.version }}
 
+    services:
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2019-latest
+        env:
+          ACCEPT_EULA: Y
+          SA_PASSWORD: E@syP@ssw0rd
+          MSSQL_TCP_PORT: 1433
+        ports:
+          - 1433:1433
+
     steps:
     - name: Checkout Code
       uses: actions/checkout@v3
@@ -125,7 +135,7 @@ jobs:
     #
 
     <% #NuGetPackages %>
-    - name: Upload NuGet package <% Package %>
+    - name: Upload NuGet package <% Artifact %>
       if: env.RELEASE_VERSION != 'none'
       uses: actions/upload-artifact@v3
       with:
@@ -545,9 +555,31 @@ jobs:
 #          SEMVER: ${{ needs.build.outputs.version }}
 #          WORKSPACE: ${{ github.workspace }}
 
-  deploy_to_test:
+  deploy_to_test_start_slack:
     if: github.repository_owner == 'Informatievlaanderen'
     needs: [push_images_to_test, build]
+    name: Deploy to test started
+    environment: test
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Parse repository name
+      run: echo REPOSITORY_NAME=$(echo ""$GITHUB_REPOSITORY"" | awk -F / '{print $2}' | sed -e ""s/:refs//"") >> $GITHUB_ENV
+      shell: bash
+
+    - name: Notify deployment started
+      uses: slackapi/slack-github-action@v1.23.0
+      with:
+        channel-id: $SLACK_CHANNEL
+        slack-message: Deployment of $REPOSITORY_NAME to test has started
+      env:
+        SLACK_BOT_TOKEN: ${{ secrets.VBR_SLACK_BOT_TOKEN }}
+        SLACK_CHANNEL: ${{ secrets.VBR_NOTIFIER_CHANNEL_NAME }}
+        REPOSITORY_NAME: ${{ env.REPOSITORY_NAME }}
+
+  deploy_to_test:
+    if: github.repository_owner == 'Informatievlaanderen'
+    needs: [deploy_to_test_start_slack, build]
     name: Deploy to test
     environment: test
     runs-on: ubuntu-latest
@@ -556,19 +588,6 @@ jobs:
         services: [<% &ServiceMatrixTest %>]
 
     steps:
-    - name: Parse repository name
-      run: echo REPOSITORY_NAME=$(echo "$GITHUB_REPOSITORY" | awk -F / '{print $2}' | sed -e "s/:refs//") >> $GITHUB_ENV
-      shell: bash
-
-    - name: Notify deployment started
-      uses: slackapi/slack-github-action@v1.23.0
-      with:
-        channel-id: '#team-dinosaur-dev'
-        slack-message: Deployment of $REPOSITORY_NAME to test has started
-      env:
-        SLACK_BOT_TOKEN: ${{ secrets.VBR_SLACK_BOT_TOKEN }}
-        REPOSITORY_NAME: ${{ env.REPOSITORY_NAME }}
-
     - name: Deploy services
       env:
         BUILD_URL: ${{ secrets.VBR_AWS_BUILD_API }}/${{matrix.services}}
@@ -591,20 +610,10 @@ jobs:
         echo Status: ${{ steps.awscurl-polling-action.outputs.status }}
         echo ${{ steps.awscurl-polling-action.outputs.final-message }}
 
-    - name: Notify deployment finished
-      uses: slackapi/slack-github-action@v1.23.0
-      with:
-        channel-id: '#team-dinosaur-dev'
-        slack-message: Deployment of $REPOSITORY_NAME to test has finished
-      env:
-        SLACK_BOT_TOKEN: ${{ secrets.VBR_SLACK_BOT_TOKEN }}
-        REPOSITORY_NAME: ${{ env.REPOSITORY_NAME }}
-
   deploy_lambda_to_test:
     if: github.repository_owner == 'Informatievlaanderen'
     needs: [deploy_to_test, build]
     name: Deploy lambda to test
-    environment: test
     runs-on: ubuntu-latest
     
     steps:
@@ -636,9 +645,53 @@ jobs:
         REGION: ${{ secrets.VBR_AWS_REGION_PRD }}
         PROMOTEURL: ${{ secrets.VBR_AWS_PROMOTE_LAMBDA_BASEURL }}
 
-  deploy_to_staging:
+  deploy_to_test_finish_slack:
+    if: github.repository_owner == 'Informatievlaanderen'
+    needs: [deploy_lambda_to_test]
+    name: Deploy to test finished
+    environment: test
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Parse repository name
+      run: echo REPOSITORY_NAME=$(echo ""$GITHUB_REPOSITORY"" | awk -F / '{print $2}' | sed -e ""s/:refs//"") >> $GITHUB_ENV
+      shell: bash
+
+    - name: Notify deployment finished
+      uses: slackapi/slack-github-action@v1.23.0
+      with:
+        channel-id: $SLACK_CHANNEL
+        slack-message: Deployment of $REPOSITORY_NAME to test finished
+      env:
+        SLACK_BOT_TOKEN: ${{ secrets.VBR_SLACK_BOT_TOKEN }}
+        SLACK_CHANNEL: ${{ secrets.VBR_NOTIFIER_CHANNEL_NAME }}
+        REPOSITORY_NAME: ${{ env.REPOSITORY_NAME }}
+
+  deploy_to_staging_start_slack:
     if: github.repository_owner == 'Informatievlaanderen'
     needs: [push_images_to_staging, deploy_to_test, build]
+    name: Deploy to staging started
+    environment: stg
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Parse repository name
+      run: echo REPOSITORY_NAME=$(echo ""$GITHUB_REPOSITORY"" | awk -F / '{print $2}' | sed -e ""s/:refs//"") >> $GITHUB_ENV
+      shell: bash
+
+    - name: Notify deployment started
+      uses: slackapi/slack-github-action@v1.23.0
+      with:
+        channel-id: $SLACK_CHANNEL
+        slack-message: Deployment of $REPOSITORY_NAME to staging has started
+      env:
+        SLACK_BOT_TOKEN: ${{ secrets.VBR_SLACK_BOT_TOKEN }}
+        SLACK_CHANNEL: ${{ secrets.VBR_NOTIFIER_CHANNEL_NAME }}
+        REPOSITORY_NAME: ${{ env.REPOSITORY_NAME }}
+
+  deploy_to_staging:
+    if: github.repository_owner == 'Informatievlaanderen'
+    needs: [deploy_to_staging_start_slack, build]
     name: Deploy to staging
     environment: stg
     runs-on: ubuntu-latest
@@ -647,19 +700,6 @@ jobs:
         services: [<% &ServiceMatrixStaging %>]
 
     steps:
-      - name: Parse repository name
-      run: echo REPOSITORY_NAME=$(echo "$GITHUB_REPOSITORY" | awk -F / '{print $2}' | sed -e "s/:refs//") >> $GITHUB_ENV
-      shell: bash
-
-      - name: Notify deployment started
-      uses: slackapi/slack-github-action@v1.23.0
-      with:
-        channel-id: '#team-dinosaur-dev'
-        slack-message: Deployment of $REPOSITORY_NAME to staging has started
-      env:
-        SLACK_BOT_TOKEN: ${{ secrets.VBR_SLACK_BOT_TOKEN }}
-        REPOSITORY_NAME: ${{ env.REPOSITORY_NAME }}
-
     - name: CD services
       env:
         BUILD_URL: ${{ secrets.VBR_AWS_BUILD_API }}/${{matrix.services}}
@@ -682,20 +722,10 @@ jobs:
         echo Status: ${{ steps.awscurl-polling-action.outputs.status }}
         echo ${{ steps.awscurl-polling-action.outputs.final-message }}
 
-    - name: Notify deployment finished
-      uses: slackapi/slack-github-action@v1.23.0
-      with:
-        channel-id: '#team-dinosaur-dev'
-        slack-message: Deployment of $REPOSITORY_NAME to staging has finished
-      env:
-        SLACK_BOT_TOKEN: ${{ secrets.VBR_SLACK_BOT_TOKEN }}
-        REPOSITORY_NAME: ${{ env.REPOSITORY_NAME }}
-
   deploy_lambda_to_staging:
     if: github.repository_owner == 'Informatievlaanderen'
     needs: [deploy_to_staging, build]
     name: Deploy lambda to staging
-    environment: stg
     runs-on: ubuntu-latest
 
     steps:
@@ -727,9 +757,53 @@ jobs:
         REGION: ${{ secrets.VBR_AWS_REGION_PRD }}
         PROMOTEURL: ${{ secrets.VBR_AWS_PROMOTE_LAMBDA_BASEURL }}
 
+  deploy_to_staging_finish_slack:
+    if: github.repository_owner == 'Informatievlaanderen'
+    needs: [deploy_lambda_to_staging]
+    name: Deploy to test finished
+    environment: stg
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Parse repository name
+      run: echo REPOSITORY_NAME=$(echo ""$GITHUB_REPOSITORY"" | awk -F / '{print $2}' | sed -e ""s/:refs//"") >> $GITHUB_ENV
+      shell: bash
+
+    - name: Notify deployment finished
+      uses: slackapi/slack-github-action@v1.23.0
+      with:
+        channel-id: $SLACK_CHANNEL
+        slack-message: Deployment of $REPOSITORY_NAME to staging finished
+      env:
+        SLACK_BOT_TOKEN: ${{ secrets.VBR_SLACK_BOT_TOKEN }}
+        SLACK_CHANNEL: ${{ secrets.VBR_NOTIFIER_CHANNEL_NAME }}
+        REPOSITORY_NAME: ${{ env.REPOSITORY_NAME }}
+
+#  deploy_to_production_start_slack:
+#    if: github.repository_owner == 'Informatievlaanderen'
+#    needs: [push_images_to_production, deploy_to_staging, build]
+#    name: Deploy to staging started
+#    environment: prd
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#    - name: Parse repository name
+#      run: echo REPOSITORY_NAME=$(echo ""$GITHUB_REPOSITORY"" | awk -F / '{print $2}' | sed -e ""s/:refs//"") >> $GITHUB_ENV
+#      shell: bash
+#
+#    - name: Notify deployment started
+#      uses: slackapi/slack-github-action@v1.23.0
+#      with:
+#        channel-id: $SLACK_CHANNEL
+#        slack-message: Deployment of $REPOSITORY_NAME to production has started
+#      env:
+#        SLACK_BOT_TOKEN: ${{ secrets.VBR_SLACK_BOT_TOKEN }}
+#        SLACK_CHANNEL: ${{ secrets.VBR_NOTIFIER_CHANNEL_NAME }}
+#        REPOSITORY_NAME: ${{ env.REPOSITORY_NAME }}
+#        
 #  deploy_to_production:
 #    if: github.repository_owner == 'Informatievlaanderen'
-#    needs: [deploy_to_staging, build]
+#    needs: [deploy_to_production_start_slack, build]
 #    name: Deploy to Production
 #    environment: prd
 #    runs-on: ubuntu-latest
@@ -738,19 +812,6 @@ jobs:
 #        services: [<% &ServiceMatrixProduction %>]
 #
 #    steps:
-#      - name: Parse repository name
-#      run: echo REPOSITORY_NAME=$(echo "$GITHUB_REPOSITORY" | awk -F / '{print $2}' | sed -e "s/:refs//") >> $GITHUB_ENV
-#      shell: bash
-#
-#      - name: Notify deployment started
-#      uses: slackapi/slack-github-action@v1.23.0
-#      with:
-#        channel-id: '#team-dinosaur-dev'
-#        slack-message: Deployment of $REPOSITORY_NAME to production has started
-#      env:
-#        SLACK_BOT_TOKEN: ${{ secrets.VBR_SLACK_BOT_TOKEN }}
-#        REPOSITORY_NAME: ${{ env.REPOSITORY_NAME }}
-#
 #    - name: CD services
 #      env:
 #        BUILD_URL: ${{ secrets.VBR_AWS_BUILD_API }}/${{matrix.services}}
@@ -773,20 +834,10 @@ jobs:
 #        echo Status: ${{ steps.awscurl-polling-action.outputs.status }}
 #        echo ${{ steps.awscurl-polling-action.outputs.final-message }}
 #
-#    - name: Notify deployment finished
-#      uses: slackapi/slack-github-action@v1.23.0
-#      with:
-#        channel-id: '#team-dinosaur-dev'
-#        slack-message: Deployment of $REPOSITORY_NAME to production has finished
-#      env:
-#        SLACK_BOT_TOKEN: ${{ secrets.VBR_SLACK_BOT_TOKEN }}
-#        REPOSITORY_NAME: ${{ env.REPOSITORY_NAME }}
-#
 #  deploy_lambda_to_production:
 #    if: github.repository_owner == 'Informatievlaanderen'
 #    needs: [deploy_to_production, build]
 #    name: Deploy lambda to production
-#    environment: prd
 #    runs-on: ubuntu-latest
 #
 #    steps:
@@ -817,4 +868,26 @@ jobs:
 #        SECRET_ACCESS_KEY_ID: ${{ secrets.VBR_AWS_SECRET_ACCESS_KEY_TST }}
 #        REGION: ${{ secrets.VBR_AWS_REGION_PRD }}
 #        PROMOTEURL: ${{ secrets.VBR_AWS_PROMOTE_LAMBDA_BASEURL }}
-#  
+#
+#  deploy_to_production_finish_slack:
+#    if: github.repository_owner == 'Informatievlaanderen'
+#    needs: [deploy_lambda_to_production]
+#    name: Deploy to production finished
+#    environment: prd
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#    - name: Parse repository name
+#      run: echo REPOSITORY_NAME=$(echo ""$GITHUB_REPOSITORY"" | awk -F / '{print $2}' | sed -e ""s/:refs//"") >> $GITHUB_ENV
+#      shell: bash
+#
+#    - name: Notify deployment finished
+#      uses: slackapi/slack-github-action@v1.23.0
+#      with:
+#        channel-id: $SLACK_CHANNEL
+#        slack-message: Deployment of $REPOSITORY_NAME to production finished
+#      env:
+#        SLACK_BOT_TOKEN: ${{ secrets.VBR_SLACK_BOT_TOKEN }}
+#        SLACK_CHANNEL: ${{ secrets.VBR_NOTIFIER_CHANNEL_NAME }}
+#        REPOSITORY_NAME: ${{ env.REPOSITORY_NAME }}
+#

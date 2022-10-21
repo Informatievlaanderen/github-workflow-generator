@@ -127,6 +127,16 @@ jobs:
     outputs:
       version: ${{ steps.set-version.outputs.version }}
 
+    services:
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2019-latest
+        env:
+          ACCEPT_EULA: Y
+          SA_PASSWORD: E@syP@ssw0rd
+          MSSQL_TCP_PORT: 1433
+        ports:
+          - 1433:1433
+
     steps:
     - name: Checkout Code
       uses: actions/checkout@v3
@@ -223,7 +233,7 @@ jobs:
      #
      # Save artifacts
      #
-
+      
     - name: Save artifacts
       if: env.RELEASE_VERSION != 'none'
       shell: bash
@@ -237,6 +247,7 @@ jobs:
         docker image save $BUILD_DOCKER_REGISTRY/streetname-registry/projections-syndication:$SEMVER -o ~/sr-projections-syndication-image.tar
         docker image save $BUILD_DOCKER_REGISTRY/streetname-registry/consumer:$SEMVER -o ~/sr-consumer-image.tar
         docker image save $BUILD_DOCKER_REGISTRY/streetname-registry/producer:$SEMVER -o ~/sr-producer-image.tar
+        docker image save $BUILD_DOCKER_REGISTRY/streetname-registry/producer-snapshot-oslo:$SEMVER -o ~/sr-producer-snapshot-oslo-image.tar
         docker image save $BUILD_DOCKER_REGISTRY/streetname-registry/migrator-streetname:$SEMVER -o ~/sr-migrator-streetname-image.tar
       env:
         BUILD_DOCKER_REGISTRY: ${{ secrets.VBR_BUILD_DOCKER_REGISTRY_TST }}
@@ -246,7 +257,7 @@ jobs:
     # Upload NuGet packages
     #
 
-    - name: Upload NuGet package Be.Vlaanderen.Basisregisters.StreetNameRegistry.Api.BackOffice
+    - name: Upload NuGet package api-backoffice
       if: env.RELEASE_VERSION != 'none'
       uses: actions/upload-artifact@v3
       with:
@@ -255,7 +266,7 @@ jobs:
       env:
         SEMVER: ${{ env.RELEASE_VERSION }}
 
-    - name: Upload NuGet package Be.Vlaanderen.Basisregisters.StreetNameRegistry.Api.BackOffice.Abstractions
+    - name: Upload NuGet package api-backoffice-abstractions
       if: env.RELEASE_VERSION != 'none'
       uses: actions/upload-artifact@v3
       with:
@@ -264,7 +275,7 @@ jobs:
       env:
         SEMVER: ${{ env.RELEASE_VERSION }}
 
-    - name: Upload NuGet package Be.Vlaanderen.Basisregisters.StreetNameRegistry.Api.Legacy
+    - name: Upload NuGet package api-legacy
       if: env.RELEASE_VERSION != 'none'
       uses: actions/upload-artifact@v3
       with:
@@ -273,7 +284,7 @@ jobs:
       env:
         SEMVER: ${{ env.RELEASE_VERSION }}
 
-    - name: Upload NuGet package Be.Vlaanderen.Basisregisters.StreetNameRegistry.Api.Oslo
+    - name: Upload NuGet package api-oslo
       if: env.RELEASE_VERSION != 'none'
       uses: actions/upload-artifact@v3
       with:
@@ -282,7 +293,7 @@ jobs:
       env:
         SEMVER: ${{ env.RELEASE_VERSION }}
 
-    - name: Upload NuGet package Be.Vlaanderen.Basisregisters.StreetNameRegistry.Api.Extract
+    - name: Upload NuGet package api-extract
       if: env.RELEASE_VERSION != 'none'
       uses: actions/upload-artifact@v3
       with:
@@ -291,7 +302,7 @@ jobs:
       env:
         SEMVER: ${{ env.RELEASE_VERSION }}
 
-    - name: Upload NuGet package Be.Vlaanderen.Basisregisters.StreetNameRegistry.Api.CrabImport
+    - name: Upload NuGet package api-crab-import
       if: env.RELEASE_VERSION != 'none'
       uses: actions/upload-artifact@v3
       with:
@@ -300,7 +311,7 @@ jobs:
       env:
         SEMVER: ${{ env.RELEASE_VERSION }}
 
-    - name: Upload NuGet package Be.Vlaanderen.Basisregisters.StreetNameRegistry.Projector
+    - name: Upload NuGet package projector
       if: env.RELEASE_VERSION != 'none'
       uses: actions/upload-artifact@v3
       with:
@@ -308,67 +319,67 @@ jobs:
         path: /home/runner/work/streetname-registry/streetname-registry/dist/nuget/Be.Vlaanderen.Basisregisters.StreetNameRegistry.Projector.*.nupkg
       env:
         SEMVER: ${{ env.RELEASE_VERSION }}
-
+    
     #
     # Upload build artifacts
     #
-
+    
     - name: Upload api-backoffice artifact
       if: env.RELEASE_VERSION != 'none'
       uses: actions/upload-artifact@v3
       with:
         name: api-backoffice
         path: ~/sr-api-backoffice-image.tar
-
+        
     - name: Upload api-legacy artifact
       if: env.RELEASE_VERSION != 'none'
       uses: actions/upload-artifact@v3
       with:
         name: api-legacy
         path: ~/sr-api-legacy-image.tar
-
+        
     - name: Upload api-oslo artifact
       if: env.RELEASE_VERSION != 'none'
       uses: actions/upload-artifact@v3
       with:
         name: api-oslo
         path: ~/sr-api-oslo-image.tar
-
+        
     - name: Upload api-crab-import artifact
       if: env.RELEASE_VERSION != 'none'
       uses: actions/upload-artifact@v3
       with:
         name: api-crab-import
         path: ~/sr-api-crab-import-image.tar
-
+        
     - name: Upload api-extract artifact
       if: env.RELEASE_VERSION != 'none'
       uses: actions/upload-artifact@v3
       with:
         name: api-extract
         path: ~/sr-api-extract-image.tar
-
+        
     - name: Upload projector artifact
       if: env.RELEASE_VERSION != 'none'
       uses: actions/upload-artifact@v3
       with:
         name: projector
         path: ~/sr-projector-image.tar
-
+        
     - name: Upload projections-syndication artifact
       if: env.RELEASE_VERSION != 'none'
       uses: actions/upload-artifact@v3
       with:
         name: projections-syndication
         path: ~/sr-projections-syndication-image.tar
-
+        
     - name: Upload consumer artifact
       if: env.RELEASE_VERSION != 'none'
       uses: actions/upload-artifact@v3
       with:
         name: consumer
         path: ~/sr-consumer-image.tar
-
+        
     - name: Upload producer artifact
       if: env.RELEASE_VERSION != 'none'
       uses: actions/upload-artifact@v3
@@ -376,6 +387,13 @@ jobs:
         name: producer
         path: ~/sr-producer-image.tar
 
+    - name: Upload producer-snapshot-oslo artifact
+      if: env.RELEASE_VERSION != 'none'
+      uses: actions/upload-artifact@v3
+      with:
+        name: producer-snapshot-oslo
+        path: ~/sr-producer-snapshot-oslo-image.tar
+        
     - name: Upload migrator-streetname artifact
       if: env.RELEASE_VERSION != 'none'
       uses: actions/upload-artifact@v3
@@ -533,7 +551,7 @@ jobs:
     needs: build
     name: Publish to NuGet
     runs-on: ubuntu-latest
-
+    
     steps:
     - name: Checkout Code
       uses: actions/checkout@v3
@@ -616,7 +634,7 @@ jobs:
 #    needs: build
 #    name: Publish to Github
 #    runs-on: ubuntu-latest
-#
+#    
 #    steps:
 #    - name: Checkout Code
 #      uses: actions/checkout@v3
@@ -678,11 +696,11 @@ jobs:
 #      with:
 #        name: nuget-projector
 #        path: ~/
-#
+#    
 #    - name: Prepare push packages to Github
 #      shell: bash
 #      run: dotnet nuget add source --username InformatieVlaanderen --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text --name github ""https://nuget.pkg.github.com/informatievlaanderen/index.json"" 
-#
+#      
 #    - name: Publish packages to GitHub
 #      shell: bash
 #      run: |
@@ -699,7 +717,7 @@ jobs:
 #        SEMVER: ${{ needs.build.outputs.version }}
 #        WORKSPACE: ${{ github.workspace }}
 #        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
+  
   push_images_to_test:
     if: needs.build.outputs.version != 'none'
     needs: build
@@ -721,61 +739,67 @@ jobs:
       #
       # Download artifacts
       #
-
+      
       - name: Download api-backoffice
         uses: actions/download-artifact@v3
         with:
           name: api-backoffice
           path: ~/
-
+      
       - name: Download api-legacy
         uses: actions/download-artifact@v3
         with:
           name: api-legacy
           path: ~/
-
+      
       - name: Download api-oslo
         uses: actions/download-artifact@v3
         with:
           name: api-oslo
           path: ~/
-
+      
       - name: Download api-crab-import
         uses: actions/download-artifact@v3
         with:
           name: api-crab-import
           path: ~/
-
+      
       - name: Download api-extract
         uses: actions/download-artifact@v3
         with:
           name: api-extract
           path: ~/
-
+      
       - name: Download projector
         uses: actions/download-artifact@v3
         with:
           name: projector
           path: ~/
-
+      
       - name: Download projections-syndication
         uses: actions/download-artifact@v3
         with:
           name: projections-syndication
           path: ~/
-
+      
       - name: Download consumer
         uses: actions/download-artifact@v3
         with:
           name: consumer
           path: ~/
-
+      
       - name: Download producer
         uses: actions/download-artifact@v3
         with:
           name: producer
           path: ~/
 
+      - name: Download producer-snapshot-oslo
+        uses: actions/download-artifact@v3
+        with:
+          name: producer-snapshot-oslo
+          path: ~/
+      
       - name: Download migrator-streetname
         uses: actions/download-artifact@v3
         with:
@@ -785,7 +809,7 @@ jobs:
       #
       # Load artifacts
       #
-
+      
       - name: Load artifacts
         shell: bash
         run: |
@@ -798,6 +822,7 @@ jobs:
           docker image load -i ~/sr-projections-syndication-image.tar
           docker image load -i ~/sr-consumer-image.tar
           docker image load -i ~/sr-producer-image.tar
+          docker image load -i ~/sr-producer-snapshot-oslo-image.tar
           docker image load -i ~/sr-migrator-streetname-image.tar
 
       - name: Push artifacts to ECR Test
@@ -814,6 +839,7 @@ jobs:
           docker push $BUILD_DOCKER_REGISTRY/streetname-registry/projections-syndication:$SEMVER
           docker push $BUILD_DOCKER_REGISTRY/streetname-registry/consumer:$SEMVER
           docker push $BUILD_DOCKER_REGISTRY/streetname-registry/producer:$SEMVER
+          docker push $BUILD_DOCKER_REGISTRY/streetname-registry/producer-snapshot-oslo:$SEMVER
           docker push $BUILD_DOCKER_REGISTRY/streetname-registry/migrator-streetname:$SEMVER
         env:
           BUILD_DOCKER_REGISTRY: ${{ secrets.VBR_BUILD_DOCKER_REGISTRY_TST }}
@@ -841,61 +867,67 @@ jobs:
       #
       # Download artifacts
       #
-
+      
       - name: Download api-backoffice
         uses: actions/download-artifact@v3
         with:
           name: api-backoffice
           path: ~/
-
+      
       - name: Download api-legacy
         uses: actions/download-artifact@v3
         with:
           name: api-legacy
           path: ~/
-
+      
       - name: Download api-oslo
         uses: actions/download-artifact@v3
         with:
           name: api-oslo
           path: ~/
-
+      
       - name: Download api-crab-import
         uses: actions/download-artifact@v3
         with:
           name: api-crab-import
           path: ~/
-
+      
       - name: Download api-extract
         uses: actions/download-artifact@v3
         with:
           name: api-extract
           path: ~/
-
+      
       - name: Download projector
         uses: actions/download-artifact@v3
         with:
           name: projector
           path: ~/
-
+      
       - name: Download projections-syndication
         uses: actions/download-artifact@v3
         with:
           name: projections-syndication
           path: ~/
-
+      
       - name: Download consumer
         uses: actions/download-artifact@v3
         with:
           name: consumer
           path: ~/
-
+      
       - name: Download producer
         uses: actions/download-artifact@v3
         with:
           name: producer
           path: ~/
 
+      - name: Download producer-snapshot-oslo
+        uses: actions/download-artifact@v3
+        with:
+          name: producer-snapshot-oslo
+          path: ~/
+      
       - name: Download migrator-streetname
         uses: actions/download-artifact@v3
         with:
@@ -905,7 +937,7 @@ jobs:
       #
       # Load artifacts
       #
-
+      
       - name: Load artifacts
         shell: bash
         run: |
@@ -918,6 +950,7 @@ jobs:
           docker image load -i ~/sr-projections-syndication-image.tar
           docker image load -i ~/sr-consumer-image.tar
           docker image load -i ~/sr-producer-image.tar
+          docker image load -i ~/sr-producer-snapshot-oslo-image.tar
           docker image load -i ~/sr-migrator-streetname-image.tar
 
       - name: Push artifacts to ECR Staging
@@ -951,6 +984,9 @@ jobs:
           docker tag $BUILD_DOCKER_REGISTRY_TST/streetname-registry/producer:$SEMVER $BUILD_DOCKER_REGISTRY/streetname-registry/producer:$SEMVER
           docker push $BUILD_DOCKER_REGISTRY/streetname-registry/producer:$SEMVER
 
+          docker tag $BUILD_DOCKER_REGISTRY_TST/streetname-registry/producer-snapshot-oslo:$SEMVER $BUILD_DOCKER_REGISTRY/streetname-registry/producer-snapshot-oslo:$SEMVER
+          docker push $BUILD_DOCKER_REGISTRY/streetname-registry/producer-snapshot-oslo:$SEMVER
+
           docker tag $BUILD_DOCKER_REGISTRY_TST/streetname-registry/migrator-streetname:$SEMVER $BUILD_DOCKER_REGISTRY/streetname-registry/migrator-streetname:$SEMVER
           docker push $BUILD_DOCKER_REGISTRY/streetname-registry/migrator-streetname:$SEMVER
         env:
@@ -980,61 +1016,67 @@ jobs:
 #      #
 #      # Download artifacts
 #      #
-#
+#      
 #      - name: Download api-backoffice
 #        uses: actions/download-artifact@v3
 #        with:
 #          name: api-backoffice
 #          path: ~/
-#
+#      
 #      - name: Download api-legacy
 #        uses: actions/download-artifact@v3
 #        with:
 #          name: api-legacy
 #          path: ~/
-#
+#      
 #      - name: Download api-oslo
 #        uses: actions/download-artifact@v3
 #        with:
 #          name: api-oslo
 #          path: ~/
-#
+#      
 #      - name: Download api-crab-import
 #        uses: actions/download-artifact@v3
 #        with:
 #          name: api-crab-import
 #          path: ~/
-#
+#      
 #      - name: Download api-extract
 #        uses: actions/download-artifact@v3
 #        with:
 #          name: api-extract
 #          path: ~/
-#
+#      
 #      - name: Download projector
 #        uses: actions/download-artifact@v3
 #        with:
 #          name: projector
 #          path: ~/
-#
+#      
 #      - name: Download projections-syndication
 #        uses: actions/download-artifact@v3
 #        with:
 #          name: projections-syndication
 #          path: ~/
-#
+#      
 #      - name: Download consumer
 #        uses: actions/download-artifact@v3
 #        with:
 #          name: consumer
 #          path: ~/
-#
+#      
 #      - name: Download producer
 #        uses: actions/download-artifact@v3
 #        with:
 #          name: producer
 #          path: ~/
 #
+#      - name: Download producer-snapshot-oslo
+#        uses: actions/download-artifact@v3
+#        with:
+#          name: producer-snapshot-oslo
+#          path: ~/
+#      
 #      - name: Download migrator-streetname
 #        uses: actions/download-artifact@v3
 #        with:
@@ -1044,7 +1086,7 @@ jobs:
 #      #
 #      # Load artifacts
 #      #
-#
+#      
 #      - name: Load artifacts
 #        shell: bash
 #        run: |
@@ -1057,6 +1099,7 @@ jobs:
 #          docker image load -i ~/sr-projections-syndication-image.tar
 #          docker image load -i ~/sr-consumer-image.tar
 #          docker image load -i ~/sr-producer-image.tar
+#          docker image load -i ~/sr-producer-snapshot-oslo-image.tar
 #          docker image load -i ~/sr-migrator-streetname-image.tar
 #
 #      - name: Push artifacts to ECR Production
@@ -1090,6 +1133,9 @@ jobs:
 #          docker tag $BUILD_DOCKER_REGISTRY_TST/streetname-registry/producer:$SEMVER $BUILD_DOCKER_REGISTRY_PRD/streetname-registry/producer:$SEMVER
 #          docker push $BUILD_DOCKER_REGISTRY_PRD/streetname-registry/producer:$SEMVER
 #
+#          docker tag $BUILD_DOCKER_REGISTRY_TST/streetname-registry/producer-snapshot-oslo:$SEMVER $BUILD_DOCKER_REGISTRY_PRD/streetname-registry/producer-snapshot-oslo:$SEMVER
+#          docker push $BUILD_DOCKER_REGISTRY_PRD/streetname-registry/producer-snapshot-oslo:$SEMVER
+#
 #          docker tag $BUILD_DOCKER_REGISTRY_TST/streetname-registry/migrator-streetname:$SEMVER $BUILD_DOCKER_REGISTRY_PRD/streetname-registry/migrator-streetname:$SEMVER
 #          docker push $BUILD_DOCKER_REGISTRY_PRD/streetname-registry/migrator-streetname:$SEMVER
 #        env:
@@ -1097,31 +1143,40 @@ jobs:
 #          BUILD_DOCKER_REGISTRY_PRD: ${{ secrets.VBR_BUILD_DOCKER_REGISTRY_PRD }}
 #          SEMVER: ${{ needs.build.outputs.version }}
 #          WORKSPACE: ${{ github.workspace }}
-
-  deploy_to_test:
+  
+  deploy_to_test_start_slack:
     if: github.repository_owner == 'Informatievlaanderen'
     needs: [push_images_to_test, build]
-    name: Deploy to test
+    name: Deploy to test started
     environment: test
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        services: ['streetname-registry-api', 'streetname-registry-import-api', 'streetname-registry-projections', 'streetname-registry-producer']
 
     steps:
     - name: Parse repository name
-      run: echo REPOSITORY_NAME=$(echo ""$GITHUB_REPOSITORY"" | awk -F / '{print $2}' | sed -e ""s/:refs//"") >> $GITHUB_ENV
+      run: echo REPOSITORY_NAME=$(echo """"$GITHUB_REPOSITORY"""" | awk -F / '{print $2}' | sed -e """"s/:refs//"""") >> $GITHUB_ENV
       shell: bash
 
     - name: Notify deployment started
       uses: slackapi/slack-github-action@v1.23.0
       with:
-        channel-id: '#team-dinosaur-dev'
+        channel-id: $SLACK_CHANNEL
         slack-message: Deployment of $REPOSITORY_NAME to test has started
       env:
         SLACK_BOT_TOKEN: ${{ secrets.VBR_SLACK_BOT_TOKEN }}
+        SLACK_CHANNEL: ${{ secrets.VBR_NOTIFIER_CHANNEL_NAME }}
         REPOSITORY_NAME: ${{ env.REPOSITORY_NAME }}
 
+  deploy_to_test:
+    if: github.repository_owner == 'Informatievlaanderen'
+    needs: [deploy_to_test_start_slack, build]
+    name: Deploy to test
+    environment: test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        services: ['streetname-registry-api', 'streetname-registry-import-api', 'streetname-registry-projections', 'streetname-registry-producer', 'streetname-registry-producer-snapshot-oslo']
+    
+    steps:
     - name: Deploy services
       env:
         BUILD_URL: ${{ secrets.VBR_AWS_BUILD_API }}/${{matrix.services}}
@@ -1144,20 +1199,10 @@ jobs:
         echo Status: ${{ steps.awscurl-polling-action.outputs.status }}
         echo ${{ steps.awscurl-polling-action.outputs.final-message }}
 
-    - name: Notify deployment finished
-      uses: slackapi/slack-github-action@v1.23.0
-      with:
-        channel-id: '#team-dinosaur-dev'
-        slack-message: Deployment of $REPOSITORY_NAME to test has finished
-      env:
-        SLACK_BOT_TOKEN: ${{ secrets.VBR_SLACK_BOT_TOKEN }}
-        REPOSITORY_NAME: ${{ env.REPOSITORY_NAME }}
-
   deploy_lambda_to_test:
     if: github.repository_owner == 'Informatievlaanderen'
     needs: [deploy_to_test, build]
     name: Deploy lambda to test
-    environment: test
     runs-on: ubuntu-latest
     
     steps:
@@ -1189,30 +1234,61 @@ jobs:
         REGION: ${{ secrets.VBR_AWS_REGION_PRD }}
         PROMOTEURL: ${{ secrets.VBR_AWS_PROMOTE_LAMBDA_BASEURL }}
 
-  deploy_to_staging:
+  deploy_to_test_finish_slack:
     if: github.repository_owner == 'Informatievlaanderen'
-    needs: [push_images_to_staging, deploy_to_test, build]
-    name: Deploy to staging
-    environment: stg
+    needs: [deploy_lambda_to_test]
+    name: Deploy to test finished
+    environment: test
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        services: ['streetname-registry-api', 'streetname-registry-projections', 'streetname-registry-backoffice-api', 'streetname-registry-consumer', 'streetname-registry-producer', 'streetname-registry-migrator-streetname']
 
     steps:
     - name: Parse repository name
-      run: echo REPOSITORY_NAME=$(echo ""$GITHUB_REPOSITORY"" | awk -F / '{print $2}' | sed -e ""s/:refs//"") >> $GITHUB_ENV
+      run: echo REPOSITORY_NAME=$(echo """"$GITHUB_REPOSITORY"""" | awk -F / '{print $2}' | sed -e """"s/:refs//"""") >> $GITHUB_ENV
+      shell: bash
+
+    - name: Notify deployment finished
+      uses: slackapi/slack-github-action@v1.23.0
+      with:
+        channel-id: $SLACK_CHANNEL
+        slack-message: Deployment of $REPOSITORY_NAME to test finished
+      env:
+        SLACK_BOT_TOKEN: ${{ secrets.VBR_SLACK_BOT_TOKEN }}
+        SLACK_CHANNEL: ${{ secrets.VBR_NOTIFIER_CHANNEL_NAME }}
+        REPOSITORY_NAME: ${{ env.REPOSITORY_NAME }}
+  
+  deploy_to_staging_start_slack:
+    if: github.repository_owner == 'Informatievlaanderen'
+    needs: [push_images_to_staging, deploy_to_test, build]
+    name: Deploy to staging started
+    environment: stg
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Parse repository name
+      run: echo REPOSITORY_NAME=$(echo """"$GITHUB_REPOSITORY"""" | awk -F / '{print $2}' | sed -e """"s/:refs//"""") >> $GITHUB_ENV
       shell: bash
 
     - name: Notify deployment started
       uses: slackapi/slack-github-action@v1.23.0
       with:
-        channel-id: '#team-dinosaur-dev'
+        channel-id: $SLACK_CHANNEL
         slack-message: Deployment of $REPOSITORY_NAME to staging has started
       env:
         SLACK_BOT_TOKEN: ${{ secrets.VBR_SLACK_BOT_TOKEN }}
+        SLACK_CHANNEL: ${{ secrets.VBR_NOTIFIER_CHANNEL_NAME }}
         REPOSITORY_NAME: ${{ env.REPOSITORY_NAME }}
 
+  deploy_to_staging:
+    if: github.repository_owner == 'Informatievlaanderen'
+    needs: [deploy_to_staging_start_slack, build]
+    name: Deploy to staging
+    environment: stg
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        services: ['streetname-registry-api', 'streetname-registry-projections', 'streetname-registry-backoffice-api', 'streetname-registry-consumer', 'streetname-registry-producer', 'streetname-registry-migrator-streetname', 'streetname-registry-producer-snapshot-oslo']
+
+    steps:
     - name: CD services
       env:
         BUILD_URL: ${{ secrets.VBR_AWS_BUILD_API }}/${{matrix.services}}
@@ -1234,21 +1310,11 @@ jobs:
         echo build-uuid: ${{ steps.awscurl-polling-action.outputs.build-uuid }}
         echo Status: ${{ steps.awscurl-polling-action.outputs.status }}
         echo ${{ steps.awscurl-polling-action.outputs.final-message }}
-
-    - name: Notify deployment finished
-      uses: slackapi/slack-github-action@v1.23.0
-      with:
-        channel-id: '#team-dinosaur-dev'
-        slack-message: Deployment of $REPOSITORY_NAME to staging has finished
-      env:
-        SLACK_BOT_TOKEN: ${{ secrets.VBR_SLACK_BOT_TOKEN }}
-        REPOSITORY_NAME: ${{ env.REPOSITORY_NAME }}
-
+        
   deploy_lambda_to_staging:
     if: github.repository_owner == 'Informatievlaanderen'
     needs: [deploy_to_staging, build]
     name: Deploy lambda to staging
-    environment: stg
     runs-on: ubuntu-latest
 
     steps:
@@ -1280,9 +1346,53 @@ jobs:
         REGION: ${{ secrets.VBR_AWS_REGION_PRD }}
         PROMOTEURL: ${{ secrets.VBR_AWS_PROMOTE_LAMBDA_BASEURL }}
 
+  deploy_to_staging_finish_slack:
+    if: github.repository_owner == 'Informatievlaanderen'
+    needs: [deploy_lambda_to_staging]
+    name: Deploy to test finished
+    environment: stg
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Parse repository name
+      run: echo REPOSITORY_NAME=$(echo """"$GITHUB_REPOSITORY"""" | awk -F / '{print $2}' | sed -e """"s/:refs//"""") >> $GITHUB_ENV
+      shell: bash
+
+    - name: Notify deployment finished
+      uses: slackapi/slack-github-action@v1.23.0
+      with:
+        channel-id: $SLACK_CHANNEL
+        slack-message: Deployment of $REPOSITORY_NAME to staging finished
+      env:
+        SLACK_BOT_TOKEN: ${{ secrets.VBR_SLACK_BOT_TOKEN }}
+        SLACK_CHANNEL: ${{ secrets.VBR_NOTIFIER_CHANNEL_NAME }}
+        REPOSITORY_NAME: ${{ env.REPOSITORY_NAME }}
+
+#  deploy_to_production_start_slack:
+#    if: github.repository_owner == 'Informatievlaanderen'
+#    needs: [push_images_to_production, deploy_to_staging, build]
+#    name: Deploy to staging started
+#    environment: prd
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#    - name: Parse repository name
+#      run: echo REPOSITORY_NAME=$(echo """"$GITHUB_REPOSITORY"""" | awk -F / '{print $2}' | sed -e """"s/:refs//"""") >> $GITHUB_ENV
+#      shell: bash
+#
+#    - name: Notify deployment started
+#      uses: slackapi/slack-github-action@v1.23.0
+#      with:
+#        channel-id: $SLACK_CHANNEL
+#        slack-message: Deployment of $REPOSITORY_NAME to production has started
+#      env:
+#        SLACK_BOT_TOKEN: ${{ secrets.VBR_SLACK_BOT_TOKEN }}
+#        SLACK_CHANNEL: ${{ secrets.VBR_NOTIFIER_CHANNEL_NAME }}
+#        REPOSITORY_NAME: ${{ env.REPOSITORY_NAME }}
+#        
 #  deploy_to_production:
 #    if: github.repository_owner == 'Informatievlaanderen'
-#    needs: [deploy_to_staging, build]
+#    needs: [deploy_to_production_start_slack, build]
 #    name: Deploy to Production
 #    environment: prd
 #    runs-on: ubuntu-latest
@@ -1291,19 +1401,6 @@ jobs:
 #        services: ['streetname-registry-api', 'streetname-registry-import-api', 'streetname-registry-projections']
 #
 #    steps:
-#    - name: Parse repository name
-#      run: echo REPOSITORY_NAME=$(echo ""$GITHUB_REPOSITORY"" | awk -F / '{print $2}' | sed -e ""s/:refs//"") >> $GITHUB_ENV
-#      shell: bash
-#
-#    - name: Notify deployment started
-#      uses: slackapi/slack-github-action@v1.23.0
-#      with:
-#        channel-id: '#team-dinosaur-dev'
-#        slack-message: Deployment of $REPOSITORY_NAME to production has started
-#      env:
-#        SLACK_BOT_TOKEN: ${{ secrets.VBR_SLACK_BOT_TOKEN }}
-#        REPOSITORY_NAME: ${{ env.REPOSITORY_NAME }}
-#
 #    - name: CD services
 #      env:
 #        BUILD_URL: ${{ secrets.VBR_AWS_BUILD_API }}/${{matrix.services}}
@@ -1326,20 +1423,10 @@ jobs:
 #        echo Status: ${{ steps.awscurl-polling-action.outputs.status }}
 #        echo ${{ steps.awscurl-polling-action.outputs.final-message }}
 #
-#    - name: Notify deployment finished
-#      uses: slackapi/slack-github-action@v1.23.0
-#      with:
-#        channel-id: '#team-dinosaur-dev'
-#        slack-message: Deployment of $REPOSITORY_NAME to production has finished
-#      env:
-#        SLACK_BOT_TOKEN: ${{ secrets.VBR_SLACK_BOT_TOKEN }}
-#        REPOSITORY_NAME: ${{ env.REPOSITORY_NAME }}
-#
 #  deploy_lambda_to_production:
 #    if: github.repository_owner == 'Informatievlaanderen'
 #    needs: [deploy_to_production, build]
 #    name: Deploy lambda to production
-#    environment: prd
 #    runs-on: ubuntu-latest
 #
 #    steps:
@@ -1370,7 +1457,29 @@ jobs:
 #        SECRET_ACCESS_KEY_ID: ${{ secrets.VBR_AWS_SECRET_ACCESS_KEY_TST }}
 #        REGION: ${{ secrets.VBR_AWS_REGION_PRD }}
 #        PROMOTEURL: ${{ secrets.VBR_AWS_PROMOTE_LAMBDA_BASEURL }}
-#  
+#
+#  deploy_to_production_finish_slack:
+#    if: github.repository_owner == 'Informatievlaanderen'
+#    needs: [deploy_lambda_to_production]
+#    name: Deploy to production finished
+#    environment: prd
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#    - name: Parse repository name
+#      run: echo REPOSITORY_NAME=$(echo """"$GITHUB_REPOSITORY"""" | awk -F / '{print $2}' | sed -e """"s/:refs//"""") >> $GITHUB_ENV
+#      shell: bash
+#
+#    - name: Notify deployment finished
+#      uses: slackapi/slack-github-action@v1.23.0
+#      with:
+#        channel-id: $SLACK_CHANNEL
+#        slack-message: Deployment of $REPOSITORY_NAME to production finished
+#      env:
+#        SLACK_BOT_TOKEN: ${{ secrets.VBR_SLACK_BOT_TOKEN }}
+#        SLACK_CHANNEL: ${{ secrets.VBR_NOTIFIER_CHANNEL_NAME }}
+#        REPOSITORY_NAME: ${{ env.REPOSITORY_NAME }}
+#
 ";
 
         var options = new ReleaseGeneratorOptions(
@@ -1387,6 +1496,7 @@ jobs:
                 "projections-syndication",
                 "consumer",
                 "producer",
+                "producer-snapshot-oslo",
                 "migrator-streetname"
             },
             new[]
@@ -1402,10 +1512,10 @@ jobs:
             "/home/runner/work/streetname-registry/streetname-registry/dist/StreetNameRegistry.Api.BackOffice.Handlers.Lambda/linux",
             new EnvironmentOptions("/home/runner/work/streetname-registry/streetname-registry/dist/StreetNameRegistry.Api.BackOffice.Handlers.Lambda/linux",
                 "s3://s3-vbr-test-basisregisters-lam-sr-sqsbackofficehandlerfunction",
-                new[] { "streetname-registry-api", "streetname-registry-import-api", "streetname-registry-projections", "streetname-registry-producer" }),
+                new[] { "streetname-registry-api", "streetname-registry-import-api", "streetname-registry-projections", "streetname-registry-producer", "streetname-registry-producer-snapshot-oslo" }),
             new EnvironmentOptions("/home/runner/work/streetname-registry/streetname-registry/dist/StreetNameRegistry.Api.BackOffice.Handlers.Lambda/linux",
                 "s3://s3-vbr-stg-basisregisters-lam-sr-sqsbackofficehandlerfunction",
-                new[] { "streetname-registry-api", "streetname-registry-projections", "streetname-registry-backoffice-api", "streetname-registry-consumer", "streetname-registry-producer", "streetname-registry-migrator-streetname" }),
+                new[] { "streetname-registry-api", "streetname-registry-projections", "streetname-registry-backoffice-api", "streetname-registry-consumer", "streetname-registry-producer", "streetname-registry-migrator-streetname", "streetname-registry-producer-snapshot-oslo" }),
             new EnvironmentOptions("/home/runner/work/streetname-registry/streetname-registry/dist/StreetNameRegistry.Api.BackOffice.Handlers.Lambda/linux",
                 "s3://s3-vbr-prd-basisregisters-lam-sr-sqsbackofficehandlerfunction",
                 new[] { "streetname-registry-api", "streetname-registry-import-api", "streetname-registry-projections" }));
