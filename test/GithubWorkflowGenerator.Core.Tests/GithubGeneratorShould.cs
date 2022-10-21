@@ -1109,6 +1109,19 @@ jobs:
         services: ['streetname-registry-api', 'streetname-registry-import-api', 'streetname-registry-projections', 'streetname-registry-producer']
 
     steps:
+    - name: Parse repository name
+      run: echo REPOSITORY_NAME=$(echo ""$GITHUB_REPOSITORY"" | awk -F / '{print $2}' | sed -e ""s/:refs//"") >> $GITHUB_ENV
+      shell: bash
+
+    - name: Notify deployment started
+      uses: slackapi/slack-github-action@v1.23.0
+      with:
+        channel-id: '#team-dinosaur-dev'
+        slack-message: Deployment of $REPOSITORY_NAME to test has started
+      env:
+        SLACK_BOT_TOKEN: ${{ secrets.VBR_SLACK_BOT_TOKEN }}
+        REPOSITORY_NAME: ${{ env.REPOSITORY_NAME }}
+
     - name: Deploy services
       env:
         BUILD_URL: ${{ secrets.VBR_AWS_BUILD_API }}/${{matrix.services}}
@@ -1130,6 +1143,15 @@ jobs:
         echo build-uuid: ${{ steps.awscurl-polling-action.outputs.build-uuid }}
         echo Status: ${{ steps.awscurl-polling-action.outputs.status }}
         echo ${{ steps.awscurl-polling-action.outputs.final-message }}
+
+    - name: Notify deployment finished
+      uses: slackapi/slack-github-action@v1.23.0
+      with:
+        channel-id: '#team-dinosaur-dev'
+        slack-message: Deployment of $REPOSITORY_NAME to test has finished
+      env:
+        SLACK_BOT_TOKEN: ${{ secrets.VBR_SLACK_BOT_TOKEN }}
+        REPOSITORY_NAME: ${{ env.REPOSITORY_NAME }}
 
   deploy_lambda_to_test:
     if: github.repository_owner == 'Informatievlaanderen'
@@ -1178,6 +1200,19 @@ jobs:
         services: ['streetname-registry-api', 'streetname-registry-projections', 'streetname-registry-backoffice-api', 'streetname-registry-consumer', 'streetname-registry-producer', 'streetname-registry-migrator-streetname']
 
     steps:
+    - name: Parse repository name
+      run: echo REPOSITORY_NAME=$(echo ""$GITHUB_REPOSITORY"" | awk -F / '{print $2}' | sed -e ""s/:refs//"") >> $GITHUB_ENV
+      shell: bash
+
+    - name: Notify deployment started
+      uses: slackapi/slack-github-action@v1.23.0
+      with:
+        channel-id: '#team-dinosaur-dev'
+        slack-message: Deployment of $REPOSITORY_NAME to staging has started
+      env:
+        SLACK_BOT_TOKEN: ${{ secrets.VBR_SLACK_BOT_TOKEN }}
+        REPOSITORY_NAME: ${{ env.REPOSITORY_NAME }}
+
     - name: CD services
       env:
         BUILD_URL: ${{ secrets.VBR_AWS_BUILD_API }}/${{matrix.services}}
@@ -1199,6 +1234,15 @@ jobs:
         echo build-uuid: ${{ steps.awscurl-polling-action.outputs.build-uuid }}
         echo Status: ${{ steps.awscurl-polling-action.outputs.status }}
         echo ${{ steps.awscurl-polling-action.outputs.final-message }}
+
+    - name: Notify deployment finished
+      uses: slackapi/slack-github-action@v1.23.0
+      with:
+        channel-id: '#team-dinosaur-dev'
+        slack-message: Deployment of $REPOSITORY_NAME to staging has finished
+      env:
+        SLACK_BOT_TOKEN: ${{ secrets.VBR_SLACK_BOT_TOKEN }}
+        REPOSITORY_NAME: ${{ env.REPOSITORY_NAME }}
 
   deploy_lambda_to_staging:
     if: github.repository_owner == 'Informatievlaanderen'
@@ -1247,6 +1291,19 @@ jobs:
 #        services: ['streetname-registry-api', 'streetname-registry-import-api', 'streetname-registry-projections']
 #
 #    steps:
+#    - name: Parse repository name
+#      run: echo REPOSITORY_NAME=$(echo ""$GITHUB_REPOSITORY"" | awk -F / '{print $2}' | sed -e ""s/:refs//"") >> $GITHUB_ENV
+#      shell: bash
+#
+#    - name: Notify deployment started
+#      uses: slackapi/slack-github-action@v1.23.0
+#      with:
+#        channel-id: '#team-dinosaur-dev'
+#        slack-message: Deployment of $REPOSITORY_NAME to production has started
+#      env:
+#        SLACK_BOT_TOKEN: ${{ secrets.VBR_SLACK_BOT_TOKEN }}
+#        REPOSITORY_NAME: ${{ env.REPOSITORY_NAME }}
+#
 #    - name: CD services
 #      env:
 #        BUILD_URL: ${{ secrets.VBR_AWS_BUILD_API }}/${{matrix.services}}
@@ -1268,6 +1325,15 @@ jobs:
 #        echo build-uuid: ${{ steps.awscurl-polling-action.outputs.build-uuid }}
 #        echo Status: ${{ steps.awscurl-polling-action.outputs.status }}
 #        echo ${{ steps.awscurl-polling-action.outputs.final-message }}
+#
+#    - name: Notify deployment finished
+#      uses: slackapi/slack-github-action@v1.23.0
+#      with:
+#        channel-id: '#team-dinosaur-dev'
+#        slack-message: Deployment of $REPOSITORY_NAME to production has finished
+#      env:
+#        SLACK_BOT_TOKEN: ${{ secrets.VBR_SLACK_BOT_TOKEN }}
+#        REPOSITORY_NAME: ${{ env.REPOSITORY_NAME }}
 #
 #  deploy_lambda_to_production:
 #    if: github.repository_owner == 'Informatievlaanderen'
