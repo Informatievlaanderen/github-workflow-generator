@@ -1,4 +1,5 @@
 using System.IO;
+using System.Reflection;
 using System.Threading.Tasks;
 using GithubWorkflowGenerator.Core.Options;
 using Stubble.Core.Builders;
@@ -11,7 +12,7 @@ public class GithubGenerator
     {
         var stubble = new StubbleBuilder().Build();
         var optionsMap = options.ToKeyValues();
-        var template = await File.ReadAllTextAsync("Templates/build.yml");
+        var template = await File.ReadAllTextAsync(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "Templates", "build.yml"));
 
         return await stubble.RenderAsync(template, optionsMap);
     }
@@ -20,7 +21,7 @@ public class GithubGenerator
     {
         var stubble = new StubbleBuilder().Build();
         var optionsMap = options.ToKeyValues();
-        var template = await File.ReadAllTextAsync("Templates/release.yml");
+        var template = await File.ReadAllTextAsync(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "Templates", "release.yml"));
 
         return await stubble.RenderAsync(template, optionsMap);
     }
@@ -29,7 +30,7 @@ public class GithubGenerator
     {
         var stubble = new StubbleBuilder().Build();
         var optionsMap = options.ToKeyValues();
-        var template = await File.ReadAllTextAsync("Templates/releaselib.yml");
+        var template = await File.ReadAllTextAsync(Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "Templates", "releaselib.yml"));
 
         return await stubble.RenderAsync(template, optionsMap);
     }
