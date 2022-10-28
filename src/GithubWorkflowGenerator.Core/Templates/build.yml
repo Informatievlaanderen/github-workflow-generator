@@ -4,6 +4,9 @@ name: Build
 on:
   push:
     branches: [ main ]
+  <% #OnPullRequests %>
+  pull_request:
+  <% /OnPullRequests %>
   workflow_dispatch: 
 
 jobs:
@@ -60,6 +63,11 @@ jobs:
         key: ${{ runner.os }}-sonar-scanner
         restore-keys: ${{ runner.os }}-sonar-scanner
         
+    - name: Install DotCover
+      shell: bash
+      run: |
+        dotnet tool install --global JetBrains.dotCover.GlobalTool
+        
     - name: Install SonarCloud scanner
       if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
       shell: bash
@@ -74,12 +82,16 @@ jobs:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       shell: bash
       run: |
-        ./.sonar/scanner/dotnet-sonarscanner begin /k:"Informatievlaanderen_<% SonarKey %>" /o:"informatievlaanderen" /d:sonar.login="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" > /dev/null 2>&1
+        ./.sonar/scanner/dotnet-sonarscanner begin /k:"Informatievlaanderen_<% SonarKey %>" /o:"informatievlaanderen" /d:sonar.login="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.cs.dotcover.reportsPaths=dotCover.Output.html > /dev/null 2>&1
 
     - name: Build
       shell: bash
       run: |
-        dotnet build --nologo --no-restore --configuration Debug <% SolutionName %>
+        dotnet build --nologo --no-restore --no-incremental --configuration Debug <% SolutionName %>
+
+    - name: Test
+      shell: bash
+      run: dotnet dotcover test --dcReportType=HTML --nologo --no-build <% SolutionName %>
 
     - name: Sonar end build & analyze
       env:
@@ -88,7 +100,3 @@ jobs:
       shell: bash
       run: |
         ./.sonar/scanner/dotnet-sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}" > /dev/null 2>&1
-
-    - name: Test
-      shell: bash
-      run: dotnet test --nologo --no-build <% SolutionName %>

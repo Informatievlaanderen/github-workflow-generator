@@ -7,7 +7,118 @@ namespace GithubWorkflowGenerator.Core.Tests;
 public class GithubGeneratorShould
 {
     [Fact]
-    public async Task GenerateBuildWorkflow()
+    public async Task GenerateBuildWorkflowWithPullRequests()
+    {
+        const string expected = @"name: Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch: 
+
+jobs:
+  build:
+    if: github.repository_owner == 'Informatievlaanderen'
+    name: Build
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Cache Paket
+      uses: actions/cache@v3
+      env:
+        cache-name: cache-paket
+      with:
+        path: packages
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('paket.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ env.cache-name }}-
+
+    - name: Parse repository name
+      run: echo REPOSITORY_NAME=$(echo ""$GITHUB_REPOSITORY"" | awk -F / '{print $2}' | sed -e ""s/:refs//"") >> $GITHUB_ENV
+      shell: bash
+
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v2
+      with:
+        dotnet-version: ${{ secrets.VBR_DOTNET_VERSION }}
+
+    - name: .NET version
+      shell: bash
+      run: dotnet --info
+
+    - name: Restore packages
+      shell: bash
+      run: |
+        dotnet tool restore
+        dotnet paket install
+    
+    - name: Cache SonarCloud packages
+      uses: actions/cache@v1
+      with:
+        path: ~/sonar/cache
+        key: ${{ runner.os }}-sonar
+        restore-keys: ${{ runner.os }}-sonar
+        
+    - name: Cache SonarCloud scanner
+      id: cache-sonar-scanner
+      uses: actions/cache@v1
+      with:
+        path: ./.sonar/scanner
+        key: ${{ runner.os }}-sonar-scanner
+        restore-keys: ${{ runner.os }}-sonar-scanner
+
+    - name: Install DotCover
+      shell: bash
+      run: |
+        dotnet tool install --global JetBrains.dotCover.GlobalTool
+        
+    - name: Install SonarCloud scanner
+      if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        mkdir .sonar
+        mkdir .sonar/scanner
+        dotnet tool update dotnet-sonarscanner --tool-path ./.sonar/scanner
+        
+    - name: Sonar begin build & analyze
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      shell: bash
+      run: |
+        ./.sonar/scanner/dotnet-sonarscanner begin /k:""Informatievlaanderen_streetname-registry"" /o:""informatievlaanderen"" /d:sonar.login=""${{ secrets.SONAR_TOKEN }}"" /d:sonar.host.url=""https://sonarcloud.io"" /d:sonar.cs.dotcover.reportsPaths=dotCover.Output.html > /dev/null 2>&1
+
+    - name: Build
+      shell: bash
+      run: |
+        dotnet build --nologo --no-restore --no-incremental --configuration Debug StreetNameRegistry.sln
+
+    - name: Test
+      shell: bash
+      run: dotnet dotcover test --dcReportType=HTML --nologo --no-build StreetNameRegistry.sln
+        
+    - name: Sonar end build & analyze
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      shell: bash
+      run: |
+        ./.sonar/scanner/dotnet-sonarscanner end /d:sonar.login=""${{ secrets.SONAR_TOKEN }}"" > /dev/null 2>&1
+";
+
+        var options = new BuildGeneratorOptions("StreetNameRegistry.sln", "streetname-registry", true);
+        var result = await new GithubGenerator().GenerateBuildWorkflowAsync(options);
+
+        Assert.NotNull(result);
+        Assert.Equal(expected.ExceptCharacters(new []{ '#', ' ', '\r', '\n' }), result.ExceptCharacters(new []{ '#', ' ', '\r', '\n' }));
+    }
+
+    [Fact]
+    public async Task GenerateBuildWorkflowWithoutPullRequests()
     {
         const string expected = @"name: Build
 
@@ -54,7 +165,7 @@ jobs:
       run: |
         dotnet tool restore
         dotnet paket install
-
+    
     - name: Cache SonarCloud packages
       uses: actions/cache@v1
       with:
@@ -69,6 +180,11 @@ jobs:
         path: ./.sonar/scanner
         key: ${{ runner.os }}-sonar-scanner
         restore-keys: ${{ runner.os }}-sonar-scanner
+
+    - name: Install DotCover
+      shell: bash
+      run: |
+        dotnet tool install --global JetBrains.dotCover.GlobalTool
         
     - name: Install SonarCloud scanner
       if: steps.cache-sonar-scanner.outputs.cache-hit != 'true'
@@ -84,13 +200,17 @@ jobs:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       shell: bash
       run: |
-        ./.sonar/scanner/dotnet-sonarscanner begin /k:""Informatievlaanderen_streetname-registry"" /o:""informatievlaanderen"" /d:sonar.login=""${{ secrets.SONAR_TOKEN }}"" /d:sonar.host.url=""https://sonarcloud.io"" > /dev/null 2>&1
+        ./.sonar/scanner/dotnet-sonarscanner begin /k:""Informatievlaanderen_streetname-registry"" /o:""informatievlaanderen"" /d:sonar.login=""${{ secrets.SONAR_TOKEN }}"" /d:sonar.host.url=""https://sonarcloud.io"" /d:sonar.cs.dotcover.reportsPaths=dotCover.Output.html > /dev/null 2>&1
 
     - name: Build
       shell: bash
       run: |
-        dotnet build --nologo --no-restore --configuration Debug StreetNameRegistry.sln
+        dotnet build --nologo --no-restore --no-incremental --configuration Debug StreetNameRegistry.sln
 
+    - name: Test
+      shell: bash
+      run: dotnet dotcover test --dcReportType=HTML --nologo --no-build StreetNameRegistry.sln
+        
     - name: Sonar end build & analyze
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
@@ -98,13 +218,9 @@ jobs:
       shell: bash
       run: |
         ./.sonar/scanner/dotnet-sonarscanner end /d:sonar.login=""${{ secrets.SONAR_TOKEN }}"" > /dev/null 2>&1
-
-    - name: Test
-      shell: bash
-      run: dotnet test --nologo --no-build StreetNameRegistry.sln
 ";
 
-        var options = new BuildGeneratorOptions("StreetNameRegistry.sln", "streetname-registry");
+        var options = new BuildGeneratorOptions("StreetNameRegistry.sln", "streetname-registry", false);
         var result = await new GithubGenerator().GenerateBuildWorkflowAsync(options);
 
         Assert.NotNull(result);
@@ -127,15 +243,15 @@ jobs:
     outputs:
       version: ${{ steps.set-version.outputs.version }}
 
-    services:
-      sqlserver:
-        image: mcr.microsoft.com/mssql/server:2019-latest
-        env:
-          ACCEPT_EULA: Y
-          SA_PASSWORD: E@syP@ssw0rd
-          MSSQL_TCP_PORT: 1433
-        ports:
-          - 1433:1433
+#    services:
+#      sqlserver:
+#        image: mcr.microsoft.com/mssql/server:2019-latest
+#        env:
+#          ACCEPT_EULA: Y
+#          SA_PASSWORD: E@syP@ssw0rd
+#          MSSQL_TCP_PORT: 1433
+#        ports:
+#          - 1433:1433
 
     steps:
     - name: Checkout Code
@@ -174,7 +290,7 @@ jobs:
       shell: bash
 
     - name: Setup Node.js
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v3.5.1
 
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v2
@@ -413,7 +529,7 @@ jobs:
 
     - name: Configure AWS credentials (Test)
       if: env.RELEASE_VERSION != 'none'
-      uses: aws-actions/configure-aws-credentials@v1
+      uses: aws-actions/configure-aws-credentials@v1-node16
       with:
         aws-access-key-id: ${{ secrets.VBR_AWS_ACCESS_KEY_ID_TST }}
         aws-secret-access-key: ${{ secrets.VBR_AWS_SECRET_ACCESS_KEY_TST }}
@@ -421,7 +537,7 @@ jobs:
 
     - name: Login to Amazon ECR (Test)
       if: env.RELEASE_VERSION != 'none'
-      uses: aws-actions/amazon-ecr-login@v1.5.1
+      uses: aws-actions/amazon-ecr-login@v1.5.2
 
     - name: Push Lambda functions to S3 Test
       if: env.RELEASE_VERSION != 'none'
@@ -437,7 +553,7 @@ jobs:
 
     - name: Configure AWS credentials (Staging)
       if: env.RELEASE_VERSION != 'none'
-      uses: aws-actions/configure-aws-credentials@v1
+      uses: aws-actions/configure-aws-credentials@v1-node16
       with:
         aws-access-key-id: ${{ secrets.VBR_AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.VBR_AWS_SECRET_ACCESS_KEY }}
@@ -445,7 +561,7 @@ jobs:
 
     - name: Login to Amazon ECR (Staging)
       if: env.RELEASE_VERSION != 'none'
-      uses: aws-actions/amazon-ecr-login@v1.5.1
+      uses: aws-actions/amazon-ecr-login@v1.5.2
 
     - name: Push Lambda functions to S3 Staging
       if: env.RELEASE_VERSION != 'none'
@@ -461,7 +577,7 @@ jobs:
 
 #    - name: Configure AWS credentials (Production)
 #      if: env.RELEASE_VERSION != 'none'
-#      uses: aws-actions/configure-aws-credentials@v1
+#      uses: aws-actions/configure-aws-credentials@v1-node16
 #      with:
 #        aws-access-key-id: ${{ secrets.VBR_AWS_ACCESS_KEY_ID_PRD }}
 #        aws-secret-access-key: ${{ secrets.VBR_AWS_SECRET_ACCESS_KEY_PRD }}
@@ -469,7 +585,7 @@ jobs:
 #
 #    - name: Login to Amazon ECR (Production)
 #      if: env.RELEASE_VERSION != 'none'
-#      uses: aws-actions/amazon-ecr-login@v1.5.1
+#      uses: aws-actions/amazon-ecr-login@v1.5.2
 #
 #    - name: Push Lambda functions to S3 Production
 #      if: env.RELEASE_VERSION != 'none'
@@ -726,7 +842,7 @@ jobs:
     steps:
       - name: Configure AWS credentials (Test)
         if: needs.build.outputs.version != 'none'
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v1-node16
         with:
           aws-access-key-id: ${{ secrets.VBR_AWS_ACCESS_KEY_ID_TST }}
           aws-secret-access-key: ${{ secrets.VBR_AWS_SECRET_ACCESS_KEY_TST }}
@@ -734,7 +850,7 @@ jobs:
 
       - name: Login to Amazon ECR (Test)
         if: needs.build.outputs.version != 'none'
-        uses: aws-actions/amazon-ecr-login@v1.5.1
+        uses: aws-actions/amazon-ecr-login@v1.5.2
 
       #
       # Download artifacts
@@ -854,7 +970,7 @@ jobs:
     steps:
       - name: Configure AWS credentials (Staging)
         if: needs.build.outputs.version != 'none'
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v1-node16
         with:
           aws-access-key-id: ${{ secrets.VBR_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.VBR_AWS_SECRET_ACCESS_KEY }}
@@ -862,7 +978,7 @@ jobs:
 
       - name: Login to Amazon ECR (Staging)
         if: needs.build.outputs.version != 'none'
-        uses: aws-actions/amazon-ecr-login@v1.5.1
+        uses: aws-actions/amazon-ecr-login@v1.5.2
 
       #
       # Download artifacts
@@ -1003,7 +1119,7 @@ jobs:
 #    steps:
 #      - name: Configure AWS credentials (Production)
 #        if: needs.build.outputs.version != 'none'
-#        uses: aws-actions/configure-aws-credentials@v1
+#        uses: aws-actions/configure-aws-credentials@v1-node16
 #        with:
 #          aws-access-key-id: ${{ secrets.VBR_AWS_ACCESS_KEY_ID_PRD }}
 #          aws-secret-access-key: ${{ secrets.VBR_AWS_SECRET_ACCESS_KEY_PRD }}
@@ -1011,7 +1127,7 @@ jobs:
 #
 #      - name: Login to Amazon ECR (Production)
 #        if: needs.build.outputs.version != 'none'
-#        uses: aws-actions/amazon-ecr-login@v1.5.1
+#        uses: aws-actions/amazon-ecr-login@v1.5.2
 #
 #      #
 #      # Download artifacts
@@ -1159,8 +1275,8 @@ jobs:
     - name: Notify deployment started
       uses: slackapi/slack-github-action@v1.23.0
       with:
-        channel-id: $SLACK_CHANNEL
-        slack-message: Deployment of $REPOSITORY_NAME to test has started
+        channel-id: '#team-dinosaur-dev'
+        slack-message: Deployment of streetname-registry to test has started
       env:
         SLACK_BOT_TOKEN: ${{ secrets.VBR_SLACK_BOT_TOKEN }}
         SLACK_CHANNEL: ${{ secrets.VBR_NOTIFIER_CHANNEL_NAME }}
@@ -1170,7 +1286,6 @@ jobs:
     if: github.repository_owner == 'Informatievlaanderen'
     needs: [deploy_to_test_start_slack, build]
     name: Deploy to test
-    environment: test
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -1207,7 +1322,7 @@ jobs:
     
     steps:
     - name: CD Lambda(s) Configure credentials
-      uses: aws-actions/configure-aws-credentials@v1
+      uses: aws-actions/configure-aws-credentials@v1-node16
       with:
         aws-access-key-id: ${{ secrets.VBR_AWS_ACCESS_KEY_ID_TST }}
         aws-secret-access-key: ${{ secrets.VBR_AWS_SECRET_ACCESS_KEY_TST }}
@@ -1238,7 +1353,6 @@ jobs:
     if: github.repository_owner == 'Informatievlaanderen'
     needs: [deploy_lambda_to_test]
     name: Deploy to test finished
-    environment: test
     runs-on: ubuntu-latest
 
     steps:
@@ -1249,8 +1363,8 @@ jobs:
     - name: Notify deployment finished
       uses: slackapi/slack-github-action@v1.23.0
       with:
-        channel-id: $SLACK_CHANNEL
-        slack-message: Deployment of $REPOSITORY_NAME to test finished
+        channel-id: '#team-dinosaur-dev'
+        slack-message: Deployment of streetname-registry to test finished
       env:
         SLACK_BOT_TOKEN: ${{ secrets.VBR_SLACK_BOT_TOKEN }}
         SLACK_CHANNEL: ${{ secrets.VBR_NOTIFIER_CHANNEL_NAME }}
@@ -1258,7 +1372,7 @@ jobs:
   
   deploy_to_staging_start_slack:
     if: github.repository_owner == 'Informatievlaanderen'
-    needs: [push_images_to_staging, deploy_to_test, build]
+    needs: [push_images_to_staging, deploy_to_test_finish_slack, build]
     name: Deploy to staging started
     environment: stg
     runs-on: ubuntu-latest
@@ -1271,8 +1385,8 @@ jobs:
     - name: Notify deployment started
       uses: slackapi/slack-github-action@v1.23.0
       with:
-        channel-id: $SLACK_CHANNEL
-        slack-message: Deployment of $REPOSITORY_NAME to staging has started
+        channel-id: '#team-dinosaur-dev'
+        slack-message: Deployment of streetname-registry to staging has started
       env:
         SLACK_BOT_TOKEN: ${{ secrets.VBR_SLACK_BOT_TOKEN }}
         SLACK_CHANNEL: ${{ secrets.VBR_NOTIFIER_CHANNEL_NAME }}
@@ -1282,7 +1396,6 @@ jobs:
     if: github.repository_owner == 'Informatievlaanderen'
     needs: [deploy_to_staging_start_slack, build]
     name: Deploy to staging
-    environment: stg
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -1319,7 +1432,7 @@ jobs:
 
     steps:
     - name: CD Lambda(s) Configure credentials
-      uses: aws-actions/configure-aws-credentials@v1
+      uses: aws-actions/configure-aws-credentials@v1-node16
       with:
         aws-access-key-id: ${{ secrets.VBR_AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.VBR_AWS_SECRET_ACCESS_KEY }}
@@ -1349,8 +1462,7 @@ jobs:
   deploy_to_staging_finish_slack:
     if: github.repository_owner == 'Informatievlaanderen'
     needs: [deploy_lambda_to_staging]
-    name: Deploy to test finished
-    environment: stg
+    name: Deploy to staging finished
     runs-on: ubuntu-latest
 
     steps:
@@ -1361,8 +1473,8 @@ jobs:
     - name: Notify deployment finished
       uses: slackapi/slack-github-action@v1.23.0
       with:
-        channel-id: $SLACK_CHANNEL
-        slack-message: Deployment of $REPOSITORY_NAME to staging finished
+        channel-id: '#team-dinosaur-dev'
+        slack-message: Deployment of streetname-registry to staging finished
       env:
         SLACK_BOT_TOKEN: ${{ secrets.VBR_SLACK_BOT_TOKEN }}
         SLACK_CHANNEL: ${{ secrets.VBR_NOTIFIER_CHANNEL_NAME }}
@@ -1370,8 +1482,8 @@ jobs:
 
 #  deploy_to_production_start_slack:
 #    if: github.repository_owner == 'Informatievlaanderen'
-#    needs: [push_images_to_production, deploy_to_staging, build]
-#    name: Deploy to staging started
+#    needs: [push_images_to_production, deploy_to_staging_finish_slack, build]
+#    name: Deploy to production started
 #    environment: prd
 #    runs-on: ubuntu-latest
 #
@@ -1383,8 +1495,8 @@ jobs:
 #    - name: Notify deployment started
 #      uses: slackapi/slack-github-action@v1.23.0
 #      with:
-#        channel-id: $SLACK_CHANNEL
-#        slack-message: Deployment of $REPOSITORY_NAME to production has started
+#        channel-id: '#team-dinosaur-dev'
+#        slack-message: Deployment of streetname-registry to production has started
 #      env:
 #        SLACK_BOT_TOKEN: ${{ secrets.VBR_SLACK_BOT_TOKEN }}
 #        SLACK_CHANNEL: ${{ secrets.VBR_NOTIFIER_CHANNEL_NAME }}
@@ -1394,7 +1506,6 @@ jobs:
 #    if: github.repository_owner == 'Informatievlaanderen'
 #    needs: [deploy_to_production_start_slack, build]
 #    name: Deploy to Production
-#    environment: prd
 #    runs-on: ubuntu-latest
 #    strategy:
 #      matrix: 
@@ -1431,7 +1542,7 @@ jobs:
 #
 #    steps:
 #    - name: CD Lambda(s) Configure credentials
-#      uses: aws-actions/configure-aws-credentials@v1
+#      uses: aws-actions/configure-aws-credentials@v1-node16
 #      with:
 #        aws-access-key-id: ${{ secrets.VBR_AWS_ACCESS_KEY_ID_PRD }}
 #        aws-secret-access-key: ${{ secrets.VBR_AWS_SECRET_ACCESS_KEY_PRD }}
@@ -1462,7 +1573,6 @@ jobs:
 #    if: github.repository_owner == 'Informatievlaanderen'
 #    needs: [deploy_lambda_to_production]
 #    name: Deploy to production finished
-#    environment: prd
 #    runs-on: ubuntu-latest
 #
 #    steps:
@@ -1473,8 +1583,8 @@ jobs:
 #    - name: Notify deployment finished
 #      uses: slackapi/slack-github-action@v1.23.0
 #      with:
-#        channel-id: $SLACK_CHANNEL
-#        slack-message: Deployment of $REPOSITORY_NAME to production finished
+#        channel-id: '#team-dinosaur-dev'
+#        slack-message: Deployment of streetname-registry to production finished
 #      env:
 #        SLACK_BOT_TOKEN: ${{ secrets.VBR_SLACK_BOT_TOKEN }}
 #        SLACK_CHANNEL: ${{ secrets.VBR_NOTIFIER_CHANNEL_NAME }}
