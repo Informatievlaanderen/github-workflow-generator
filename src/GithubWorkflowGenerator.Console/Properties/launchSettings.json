@@ -2,7 +2,7 @@
   "profiles": {
     "GithubWorkflowGenerator.Console": {
       "commandName": "Project",
-      "commandLineArgs": "--help"
+      "commandLineArgs": "build --solutionName MySolution --sonarKey MySonarKey"
     }
   }
 }
