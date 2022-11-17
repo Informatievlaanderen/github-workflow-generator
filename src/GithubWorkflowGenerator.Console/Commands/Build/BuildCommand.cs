@@ -1,4 +1,5 @@
 ﻿using System.CommandLine;
+using System.CommandLine.IO;
 using System.IO;
 using System.Threading.Tasks;
 using GithubWorkflowGenerator.Core;
@@ -35,5 +36,8 @@ internal class BuildCommand : Command
         var options = new BuildGeneratorOptions(solutionName, sonarKey, onPullRequests);
         var result = await generator.GenerateBuildWorkflowAsync(options);
         await File.WriteAllTextAsync(fileName, result);
+
+        IConsole console = new SystemConsole();
+        console.WriteLine($"{fileName} for solution {solutionName} was successfully generated.");
     }
 }
