@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.CommandLine;
+using System.CommandLine.IO;
 using System.IO;
 using System.Threading.Tasks;
 using GithubWorkflowGenerator.Core;
@@ -33,5 +34,8 @@ internal class ReleaseLibCommand : Command
         var options = new ReleaseLibGeneratorOptions(nugetPackages);
         string result = await generator.GenerateReleaseLibWorkflowAsync(options);
         await File.WriteAllTextAsync(fileName, result);
+
+        IConsole console = new SystemConsole();
+        console.WriteLine($"{fileName} was successfully generated.");
     }
 }

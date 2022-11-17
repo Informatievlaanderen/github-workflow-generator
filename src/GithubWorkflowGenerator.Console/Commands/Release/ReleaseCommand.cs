@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.CommandLine;
+using System.CommandLine.IO;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -73,5 +74,8 @@ internal class ReleaseCommand : Command
             new EnvironmentOptions(productionPublishFolderForLambda, productionS3BucketForLambda, productionServiceMatrix));
         string result = await generator.GenerateReleaseWorkflowAsync(options);
         await File.WriteAllTextAsync(fileName, result);
+ 
+        IConsole console = new SystemConsole();
+        console.WriteLine($"{fileName} was successfully generated.");
     }
 }
