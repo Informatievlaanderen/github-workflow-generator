@@ -18,10 +18,10 @@ internal class ReleaseCommand : Command
         : this(CommandName, CommandDescription)
     {
         var releaseFileName = new Option<string>(new[] { "--fileName" }, () => "release.yml", "Output file name.");
-        var repositoryName = new Option<string>(new[] { "--repositoryName" }, "Repository name");
+        var repositoryName = new Option<string>(new[] { "--repositoryName" }, "Repository name (e.g. streetname-registry)");
         var repositoryPrefix = new Option<string>(new[] { "--repositoryPrefix" }, "Repository prefix (e.g. sr for streetname-registry)");
         var buildArtifacts = new Option<List<string>>(new[] { "--buildArtifacts" }, "Build artifacts (space separated)") { AllowMultipleArgumentsPerToken = true };
-        var nugetPackages = new Option<List<string>>(new[] { "--nugetPackages" }, "Nuget packages (space separated list of --prop:Artifact some-artfact and --prop:Package SomeNuGetPackage)") { AllowMultipleArgumentsPerToken = true };
+        var nugetPackages = new Option<List<string>>(new[] { "--nugetPackages" }, "Nuget packages (space separated list of --prop:Artifact some-artifact and --prop:Package SomeNuGetPackage)") { AllowMultipleArgumentsPerToken = true };
         var lambdaSourceFolder = new Option<string>(new[] { "--lambdaSourceFolder" }, "Folder where the lambda function is zipped from.");
         var testPublishFolderForLambda = new Option<string>(new[] { "--testPublishFolderForLambda" }, "Test publish folder for lambda (must not end with / or \\)");
         var testS3BucketForLambda = new Option<string>(new[] { "--testS3BucketForLambda" }, "Test S3 bucket for lambda (in format s3://some.bucket.name)");
