@@ -2,4 +2,4 @@
 
 namespace GithubWorkflowGenerator.Core.Options;
 
-public record EnvironmentOptions(string PublishFolderForLambda, string S3BucketForLambda, IEnumerable<string> ServiceMatrix);
+public record EnvironmentOptions(string S3BucketForLambda, IEnumerable<string> ServiceMatrix);
