@@ -243,16 +243,6 @@ jobs:
     outputs:
       version: ${{ steps.set-version.outputs.version }}
 
-#    services:
-#      sqlserver:
-#        image: mcr.microsoft.com/mssql/server:2019-latest
-#        env:
-#          ACCEPT_EULA: Y
-#          SA_PASSWORD: E@syP@ssw0rd
-#          MSSQL_TCP_PORT: 1433
-#        ports:
-#          - 1433:1433
-
     steps:
     - name: Checkout Code
       uses: actions/checkout@v3
@@ -575,29 +565,29 @@ jobs:
       env:
         SEMVER: ${{ env.RELEASE_VERSION }}
 
-#    - name: Configure AWS credentials (Production)
-#      if: env.RELEASE_VERSION != 'none'
-#      uses: aws-actions/configure-aws-credentials@v1-node16
-#      with:
-#        aws-access-key-id: ${{ secrets.VBR_AWS_ACCESS_KEY_ID_PRD }}
-#        aws-secret-access-key: ${{ secrets.VBR_AWS_SECRET_ACCESS_KEY_PRD }}
-#        aws-region: ${{ secrets.VBR_AWS_REGION_PRD }}
-#
-#    - name: Login to Amazon ECR (Production)
-#      if: env.RELEASE_VERSION != 'none'
-#      uses: aws-actions/amazon-ecr-login@v1.5.2
-#
-#    - name: Push Lambda functions to S3 Production
-#      if: env.RELEASE_VERSION != 'none'
-#      shell: bash
-#      run: |
-#        echo Push Lambda functions to S3 Production
-#        pushd /home/runner/work/streetname-registry/streetname-registry/dist/StreetNameRegistry.Api.BackOffice.Handlers.Lambda/linux
-#        echo aws s3 cp lambda.zip s3://s3-vbr-prd-basisregisters-lam-sr-sqsbackofficehandlerfunction/$SEMVER/lambda.zip
-#        aws s3 cp lambda.zip s3://s3-vbr-prd-basisregisters-lam-sr-sqsbackofficehandlerfunction/$SEMVER/lambda.zip
-#        popd
-#      env:
-#       SEMVER: ${{ env.RELEASE_VERSION }}
+    - name: Configure AWS credentials (Production)
+      if: env.RELEASE_VERSION != 'none'
+      uses: aws-actions/configure-aws-credentials@v1-node16
+      with:
+        aws-access-key-id: ${{ secrets.VBR_AWS_ACCESS_KEY_ID_PRD }}
+        aws-secret-access-key: ${{ secrets.VBR_AWS_SECRET_ACCESS_KEY_PRD }}
+        aws-region: ${{ secrets.VBR_AWS_REGION_PRD }}
+
+    - name: Login to Amazon ECR (Production)
+      if: env.RELEASE_VERSION != 'none'
+      uses: aws-actions/amazon-ecr-login@v1.5.2
+
+    - name: Push Lambda functions to S3 Production
+      if: env.RELEASE_VERSION != 'none'
+      shell: bash
+      run: |
+        echo Push Lambda functions to S3 Production
+        pushd /home/runner/work/streetname-registry/streetname-registry/dist/StreetNameRegistry.Api.BackOffice.Handlers.Lambda/linux
+        echo aws s3 cp lambda.zip s3://s3-vbr-prd-basisregisters-lam-sr-sqsbackofficehandlerfunction/$SEMVER/lambda.zip
+        aws s3 cp lambda.zip s3://s3-vbr-prd-basisregisters-lam-sr-sqsbackofficehandlerfunction/$SEMVER/lambda.zip
+        popd
+      env:
+       SEMVER: ${{ env.RELEASE_VERSION }}
 
   publish_to_atlassian:
     if: needs.build.outputs.version != 'none'
@@ -745,95 +735,6 @@ jobs:
         WORKSPACE: ${{ github.workspace }}
         NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
 
-#  publish_to_github:
-#    if: needs.build.outputs.version != 'none'
-#    needs: build
-#    name: Publish to Github
-#    runs-on: ubuntu-latest
-#    
-#    steps:
-#    - name: Checkout Code
-#      uses: actions/checkout@v3
-#
-#    - name: Setup .NET Core
-#      uses: actions/setup-dotnet@v2
-#      with:
-#        dotnet-version: ${{ secrets.VBR_DOTNET_VERSION }}
-#
-#    - name: .NET version
-#      shell: bash
-#      run: dotnet --info
-#
-#    - name: Download NuGet package api-backoffice
-#      if: env.RELEASE_VERSION != 'none'
-#      uses: actions/download-artifact@v3
-#      with:
-#        name: nuget-api-backoffice
-#        path: ~/
-#
-#    - name: Download NuGet package api-backoffice-abstractions
-#      if: env.RELEASE_VERSION != 'none'
-#      uses: actions/download-artifact@v3
-#      with:
-#        name: nuget-api-backoffice-abstractions
-#        path: ~/
-#
-#    - name: Download NuGet package api-legacy
-#      if: env.RELEASE_VERSION != 'none'
-#      uses: actions/download-artifact@v3
-#      with:
-#        name: nuget-api-legacy
-#        path: ~/
-#
-#    - name: Download NuGet package api-oslo
-#      if: env.RELEASE_VERSION != 'none'
-#      uses: actions/download-artifact@v3
-#      with:
-#        name: nuget-api-oslo
-#        path: ~/
-#
-#    - name: Download NuGet package api-extract
-#      if: env.RELEASE_VERSION != 'none'
-#      uses: actions/download-artifact@v3
-#      with:
-#        name: nuget-api-extract
-#        path: ~/
-#
-#    - name: Download NuGet package api-crab-import
-#      if: env.RELEASE_VERSION != 'none'
-#      uses: actions/download-artifact@v3
-#      with:
-#        name: nuget-api-crab-import
-#        path: ~/
-#
-#    - name: Download NuGet package projector
-#      if: env.RELEASE_VERSION != 'none'
-#      uses: actions/download-artifact@v3
-#      with:
-#        name: nuget-projector
-#        path: ~/
-#    
-#    - name: Prepare push packages to Github
-#      shell: bash
-#      run: dotnet nuget add source --username InformatieVlaanderen --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text --name github ""https://nuget.pkg.github.com/informatievlaanderen/index.json"" 
-#      
-#    - name: Publish packages to GitHub
-#      shell: bash
-#      run: |
-#        echo SEMVER $SEMVER
-#        echo GITHUB_TOKEN $GITHUB_TOKEN
-#        dotnet nuget push ~/Be.Vlaanderen.Basisregisters.StreetNameRegistry.Api.BackOffice.$SEMVER.nupkg --source ""github"" --api-key $GITHUB_TOKEN
-#        dotnet nuget push ~/Be.Vlaanderen.Basisregisters.StreetNameRegistry.Api.BackOffice.Abstractions.$SEMVER.nupkg --source ""github"" --api-key $GITHUB_TOKEN
-#        dotnet nuget push ~/Be.Vlaanderen.Basisregisters.StreetNameRegistry.Api.Legacy.$SEMVER.nupkg --source ""github"" --api-key $GITHUB_TOKEN
-#        dotnet nuget push ~/Be.Vlaanderen.Basisregisters.StreetNameRegistry.Api.Oslo.$SEMVER.nupkg --source ""github"" --api-key $GITHUB_TOKEN
-#        dotnet nuget push ~/Be.Vlaanderen.Basisregisters.StreetNameRegistry.Api.Extract.$SEMVER.nupkg --source ""github"" --api-key $GITHUB_TOKEN
-#        dotnet nuget push ~/Be.Vlaanderen.Basisregisters.StreetNameRegistry.Api.CrabImport.$SEMVER.nupkg --source ""github"" --api-key $GITHUB_TOKEN
-#        dotnet nuget push ~/Be.Vlaanderen.Basisregisters.StreetNameRegistry.Projector.$SEMVER.nupkg --source ""github"" --api-key $GITHUB_TOKEN
-#      env:
-#        SEMVER: ${{ needs.build.outputs.version }}
-#        WORKSPACE: ${{ github.workspace }}
-#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  
   push_images_to_test:
     if: needs.build.outputs.version != 'none'
     needs: build
@@ -1111,154 +1012,154 @@ jobs:
           SEMVER: ${{ needs.build.outputs.version }}
           WORKSPACE: ${{ github.workspace }}
 
-#  push_images_to_production:
-#    if: needs.build.outputs.version != 'none'
-#    needs: build
-#    name: Push images to Production
-#    runs-on: ubuntu-latest
-#    steps:
-#      - name: Configure AWS credentials (Production)
-#        if: needs.build.outputs.version != 'none'
-#        uses: aws-actions/configure-aws-credentials@v1-node16
-#        with:
-#          aws-access-key-id: ${{ secrets.VBR_AWS_ACCESS_KEY_ID_PRD }}
-#          aws-secret-access-key: ${{ secrets.VBR_AWS_SECRET_ACCESS_KEY_PRD }}
-#          aws-region: ${{ secrets.VBR_AWS_REGION_PRD }}
-#
-#      - name: Login to Amazon ECR (Production)
-#        if: needs.build.outputs.version != 'none'
-#        uses: aws-actions/amazon-ecr-login@v1.5.2
-#
-#      #
-#      # Download artifacts
-#      #
-#      
-#      - name: Download api-backoffice
-#        uses: actions/download-artifact@v3
-#        with:
-#          name: api-backoffice
-#          path: ~/
-#      
-#      - name: Download api-legacy
-#        uses: actions/download-artifact@v3
-#        with:
-#          name: api-legacy
-#          path: ~/
-#      
-#      - name: Download api-oslo
-#        uses: actions/download-artifact@v3
-#        with:
-#          name: api-oslo
-#          path: ~/
-#      
-#      - name: Download api-crab-import
-#        uses: actions/download-artifact@v3
-#        with:
-#          name: api-crab-import
-#          path: ~/
-#      
-#      - name: Download api-extract
-#        uses: actions/download-artifact@v3
-#        with:
-#          name: api-extract
-#          path: ~/
-#      
-#      - name: Download projector
-#        uses: actions/download-artifact@v3
-#        with:
-#          name: projector
-#          path: ~/
-#      
-#      - name: Download projections-syndication
-#        uses: actions/download-artifact@v3
-#        with:
-#          name: projections-syndication
-#          path: ~/
-#      
-#      - name: Download consumer
-#        uses: actions/download-artifact@v3
-#        with:
-#          name: consumer
-#          path: ~/
-#      
-#      - name: Download producer
-#        uses: actions/download-artifact@v3
-#        with:
-#          name: producer
-#          path: ~/
-#
-#      - name: Download producer-snapshot-oslo
-#        uses: actions/download-artifact@v3
-#        with:
-#          name: producer-snapshot-oslo
-#          path: ~/
-#      
-#      - name: Download migrator-streetname
-#        uses: actions/download-artifact@v3
-#        with:
-#          name: migrator-streetname
-#          path: ~/
-#
-#      #
-#      # Load artifacts
-#      #
-#      
-#      - name: Load artifacts
-#        shell: bash
-#        run: |
-#          docker image load -i ~/sr-api-backoffice-image.tar
-#          docker image load -i ~/sr-api-legacy-image.tar
-#          docker image load -i ~/sr-api-oslo-image.tar
-#          docker image load -i ~/sr-api-crab-import-image.tar
-#          docker image load -i ~/sr-api-extract-image.tar
-#          docker image load -i ~/sr-projector-image.tar
-#          docker image load -i ~/sr-projections-syndication-image.tar
-#          docker image load -i ~/sr-consumer-image.tar
-#          docker image load -i ~/sr-producer-image.tar
-#          docker image load -i ~/sr-producer-snapshot-oslo-image.tar
-#          docker image load -i ~/sr-migrator-streetname-image.tar
-#
-#      - name: Push artifacts to ECR Production
-#        if: needs.build.outputs.version != 'none'
-#        shell: bash
-#        run: |
-#          docker tag $BUILD_DOCKER_REGISTRY_TST/streetname-registry/api-backoffice:$SEMVER $BUILD_DOCKER_REGISTRY_PRD/streetname-registry/api-backoffice:$SEMVER
-#          docker push $BUILD_DOCKER_REGISTRY_PRD/streetname-registry/api-backoffice:$SEMVER
-#
-#          docker tag $BUILD_DOCKER_REGISTRY_TST/streetname-registry/api-legacy:$SEMVER $BUILD_DOCKER_REGISTRY_PRD/streetname-registry/api-legacy:$SEMVER
-#          docker push $BUILD_DOCKER_REGISTRY_PRD/streetname-registry/api-legacy:$SEMVER
-#
-#          docker tag $BUILD_DOCKER_REGISTRY_TST/streetname-registry/api-oslo:$SEMVER $BUILD_DOCKER_REGISTRY_PRD/streetname-registry/api-oslo:$SEMVER
-#          docker push $BUILD_DOCKER_REGISTRY_PRD/streetname-registry/api-oslo:$SEMVER
-#
-#          docker tag $BUILD_DOCKER_REGISTRY_TST/streetname-registry/api-crab-import:$SEMVER $BUILD_DOCKER_REGISTRY_PRD/streetname-registry/api-crab-import:$SEMVER
-#          docker push $BUILD_DOCKER_REGISTRY_PRD/streetname-registry/api-crab-import:$SEMVER
-#
-#          docker tag $BUILD_DOCKER_REGISTRY_TST/streetname-registry/api-extract:$SEMVER $BUILD_DOCKER_REGISTRY_PRD/streetname-registry/api-extract:$SEMVER
-#          docker push $BUILD_DOCKER_REGISTRY_PRD/streetname-registry/api-extract:$SEMVER
-#
-#          docker tag $BUILD_DOCKER_REGISTRY_TST/streetname-registry/projector:$SEMVER $BUILD_DOCKER_REGISTRY_PRD/streetname-registry/projector:$SEMVER
-#          docker push $BUILD_DOCKER_REGISTRY_PRD/streetname-registry/projector:$SEMVER
-#
-#          docker tag $BUILD_DOCKER_REGISTRY_TST/streetname-registry/projections-syndication:$SEMVER $BUILD_DOCKER_REGISTRY_PRD/streetname-registry/projections-syndication:$SEMVER
-#          docker push $BUILD_DOCKER_REGISTRY_PRD/streetname-registry/projections-syndication:$SEMVER
-#
-#          docker tag $BUILD_DOCKER_REGISTRY_TST/streetname-registry/consumer:$SEMVER $BUILD_DOCKER_REGISTRY_PRD/streetname-registry/consumer:$SEMVER
-#          docker push $BUILD_DOCKER_REGISTRY_PRD/streetname-registry/consumer:$SEMVER
-#
-#          docker tag $BUILD_DOCKER_REGISTRY_TST/streetname-registry/producer:$SEMVER $BUILD_DOCKER_REGISTRY_PRD/streetname-registry/producer:$SEMVER
-#          docker push $BUILD_DOCKER_REGISTRY_PRD/streetname-registry/producer:$SEMVER
-#
-#          docker tag $BUILD_DOCKER_REGISTRY_TST/streetname-registry/producer-snapshot-oslo:$SEMVER $BUILD_DOCKER_REGISTRY_PRD/streetname-registry/producer-snapshot-oslo:$SEMVER
-#          docker push $BUILD_DOCKER_REGISTRY_PRD/streetname-registry/producer-snapshot-oslo:$SEMVER
-#
-#          docker tag $BUILD_DOCKER_REGISTRY_TST/streetname-registry/migrator-streetname:$SEMVER $BUILD_DOCKER_REGISTRY_PRD/streetname-registry/migrator-streetname:$SEMVER
-#          docker push $BUILD_DOCKER_REGISTRY_PRD/streetname-registry/migrator-streetname:$SEMVER
-#        env:
-#          BUILD_DOCKER_REGISTRY_TST: ${{ secrets.VBR_BUILD_DOCKER_REGISTRY_TST }}
-#          BUILD_DOCKER_REGISTRY_PRD: ${{ secrets.VBR_BUILD_DOCKER_REGISTRY_PRD }}
-#          SEMVER: ${{ needs.build.outputs.version }}
-#          WORKSPACE: ${{ github.workspace }}
+  push_images_to_production:
+    if: needs.build.outputs.version != 'none'
+    needs: build
+    name: Push images to Production
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS credentials (Production)
+        if: needs.build.outputs.version != 'none'
+        uses: aws-actions/configure-aws-credentials@v1-node16
+        with:
+          aws-access-key-id: ${{ secrets.VBR_AWS_ACCESS_KEY_ID_PRD }}
+          aws-secret-access-key: ${{ secrets.VBR_AWS_SECRET_ACCESS_KEY_PRD }}
+          aws-region: ${{ secrets.VBR_AWS_REGION_PRD }}
+
+      - name: Login to Amazon ECR (Production)
+        if: needs.build.outputs.version != 'none'
+        uses: aws-actions/amazon-ecr-login@v1.5.2
+
+      #
+      # Download artifacts
+      #
+      
+      - name: Download api-backoffice
+        uses: actions/download-artifact@v3
+        with:
+          name: api-backoffice
+          path: ~/
+      
+      - name: Download api-legacy
+        uses: actions/download-artifact@v3
+        with:
+          name: api-legacy
+          path: ~/
+      
+      - name: Download api-oslo
+        uses: actions/download-artifact@v3
+        with:
+          name: api-oslo
+          path: ~/
+      
+      - name: Download api-crab-import
+        uses: actions/download-artifact@v3
+        with:
+          name: api-crab-import
+          path: ~/
+      
+      - name: Download api-extract
+        uses: actions/download-artifact@v3
+        with:
+          name: api-extract
+          path: ~/
+      
+      - name: Download projector
+        uses: actions/download-artifact@v3
+        with:
+          name: projector
+          path: ~/
+      
+      - name: Download projections-syndication
+        uses: actions/download-artifact@v3
+        with:
+          name: projections-syndication
+          path: ~/
+      
+      - name: Download consumer
+        uses: actions/download-artifact@v3
+        with:
+          name: consumer
+          path: ~/
+      
+      - name: Download producer
+        uses: actions/download-artifact@v3
+        with:
+          name: producer
+          path: ~/
+
+      - name: Download producer-snapshot-oslo
+        uses: actions/download-artifact@v3
+        with:
+          name: producer-snapshot-oslo
+          path: ~/
+      
+      - name: Download migrator-streetname
+        uses: actions/download-artifact@v3
+        with:
+          name: migrator-streetname
+          path: ~/
+
+      #
+      # Load artifacts
+      #
+      
+      - name: Load artifacts
+        shell: bash
+        run: |
+          docker image load -i ~/sr-api-backoffice-image.tar
+          docker image load -i ~/sr-api-legacy-image.tar
+          docker image load -i ~/sr-api-oslo-image.tar
+          docker image load -i ~/sr-api-crab-import-image.tar
+          docker image load -i ~/sr-api-extract-image.tar
+          docker image load -i ~/sr-projector-image.tar
+          docker image load -i ~/sr-projections-syndication-image.tar
+          docker image load -i ~/sr-consumer-image.tar
+          docker image load -i ~/sr-producer-image.tar
+          docker image load -i ~/sr-producer-snapshot-oslo-image.tar
+          docker image load -i ~/sr-migrator-streetname-image.tar
+
+      - name: Push artifacts to ECR Production
+        if: needs.build.outputs.version != 'none'
+        shell: bash
+        run: |
+          docker tag $BUILD_DOCKER_REGISTRY_TST/streetname-registry/api-backoffice:$SEMVER $BUILD_DOCKER_REGISTRY_PRD/streetname-registry/api-backoffice:$SEMVER
+          docker push $BUILD_DOCKER_REGISTRY_PRD/streetname-registry/api-backoffice:$SEMVER
+
+          docker tag $BUILD_DOCKER_REGISTRY_TST/streetname-registry/api-legacy:$SEMVER $BUILD_DOCKER_REGISTRY_PRD/streetname-registry/api-legacy:$SEMVER
+          docker push $BUILD_DOCKER_REGISTRY_PRD/streetname-registry/api-legacy:$SEMVER
+
+          docker tag $BUILD_DOCKER_REGISTRY_TST/streetname-registry/api-oslo:$SEMVER $BUILD_DOCKER_REGISTRY_PRD/streetname-registry/api-oslo:$SEMVER
+          docker push $BUILD_DOCKER_REGISTRY_PRD/streetname-registry/api-oslo:$SEMVER
+
+          docker tag $BUILD_DOCKER_REGISTRY_TST/streetname-registry/api-crab-import:$SEMVER $BUILD_DOCKER_REGISTRY_PRD/streetname-registry/api-crab-import:$SEMVER
+          docker push $BUILD_DOCKER_REGISTRY_PRD/streetname-registry/api-crab-import:$SEMVER
+
+          docker tag $BUILD_DOCKER_REGISTRY_TST/streetname-registry/api-extract:$SEMVER $BUILD_DOCKER_REGISTRY_PRD/streetname-registry/api-extract:$SEMVER
+          docker push $BUILD_DOCKER_REGISTRY_PRD/streetname-registry/api-extract:$SEMVER
+
+          docker tag $BUILD_DOCKER_REGISTRY_TST/streetname-registry/projector:$SEMVER $BUILD_DOCKER_REGISTRY_PRD/streetname-registry/projector:$SEMVER
+          docker push $BUILD_DOCKER_REGISTRY_PRD/streetname-registry/projector:$SEMVER
+
+          docker tag $BUILD_DOCKER_REGISTRY_TST/streetname-registry/projections-syndication:$SEMVER $BUILD_DOCKER_REGISTRY_PRD/streetname-registry/projections-syndication:$SEMVER
+          docker push $BUILD_DOCKER_REGISTRY_PRD/streetname-registry/projections-syndication:$SEMVER
+
+          docker tag $BUILD_DOCKER_REGISTRY_TST/streetname-registry/consumer:$SEMVER $BUILD_DOCKER_REGISTRY_PRD/streetname-registry/consumer:$SEMVER
+          docker push $BUILD_DOCKER_REGISTRY_PRD/streetname-registry/consumer:$SEMVER
+
+          docker tag $BUILD_DOCKER_REGISTRY_TST/streetname-registry/producer:$SEMVER $BUILD_DOCKER_REGISTRY_PRD/streetname-registry/producer:$SEMVER
+          docker push $BUILD_DOCKER_REGISTRY_PRD/streetname-registry/producer:$SEMVER
+
+          docker tag $BUILD_DOCKER_REGISTRY_TST/streetname-registry/producer-snapshot-oslo:$SEMVER $BUILD_DOCKER_REGISTRY_PRD/streetname-registry/producer-snapshot-oslo:$SEMVER
+          docker push $BUILD_DOCKER_REGISTRY_PRD/streetname-registry/producer-snapshot-oslo:$SEMVER
+
+          docker tag $BUILD_DOCKER_REGISTRY_TST/streetname-registry/migrator-streetname:$SEMVER $BUILD_DOCKER_REGISTRY_PRD/streetname-registry/migrator-streetname:$SEMVER
+          docker push $BUILD_DOCKER_REGISTRY_PRD/streetname-registry/migrator-streetname:$SEMVER
+        env:
+          BUILD_DOCKER_REGISTRY_TST: ${{ secrets.VBR_BUILD_DOCKER_REGISTRY_TST }}
+          BUILD_DOCKER_REGISTRY_PRD: ${{ secrets.VBR_BUILD_DOCKER_REGISTRY_PRD }}
+          SEMVER: ${{ needs.build.outputs.version }}
+          WORKSPACE: ${{ github.workspace }}
   
   deploy_to_test_start_slack:
     if: github.repository_owner == 'Informatievlaanderen'
@@ -1364,7 +1265,7 @@ jobs:
       uses: slackapi/slack-github-action@v1.23.0
       with:
         channel-id: '#team-dinosaur-dev'
-        slack-message: Deployment of streetname-registry to test finished
+        slack-message: Deployment of streetname-registry to test has finished
       env:
         SLACK_BOT_TOKEN: ${{ secrets.VBR_SLACK_BOT_TOKEN }}
         SLACK_CHANNEL: ${{ secrets.VBR_NOTIFIER_CHANNEL_NAME }}
@@ -1474,122 +1375,122 @@ jobs:
       uses: slackapi/slack-github-action@v1.23.0
       with:
         channel-id: '#team-dinosaur-dev'
-        slack-message: Deployment of streetname-registry to staging finished
+        slack-message: Deployment of streetname-registry to staging has finished
       env:
         SLACK_BOT_TOKEN: ${{ secrets.VBR_SLACK_BOT_TOKEN }}
         SLACK_CHANNEL: ${{ secrets.VBR_NOTIFIER_CHANNEL_NAME }}
         REPOSITORY_NAME: ${{ env.REPOSITORY_NAME }}
 
-#  deploy_to_production_start_slack:
-#    if: github.repository_owner == 'Informatievlaanderen'
-#    needs: [push_images_to_production, deploy_to_staging_finish_slack, build]
-#    name: Deploy to production started
-#    environment: prd
-#    runs-on: ubuntu-latest
-#
-#    steps:
-#    - name: Parse repository name
-#      run: echo REPOSITORY_NAME=$(echo """"$GITHUB_REPOSITORY"""" | awk -F / '{print $2}' | sed -e """"s/:refs//"""") >> $GITHUB_ENV
-#      shell: bash
-#
-#    - name: Notify deployment started
-#      uses: slackapi/slack-github-action@v1.23.0
-#      with:
-#        channel-id: '#team-dinosaur-dev'
-#        slack-message: Deployment of streetname-registry to production has started
-#      env:
-#        SLACK_BOT_TOKEN: ${{ secrets.VBR_SLACK_BOT_TOKEN }}
-#        SLACK_CHANNEL: ${{ secrets.VBR_NOTIFIER_CHANNEL_NAME }}
-#        REPOSITORY_NAME: ${{ env.REPOSITORY_NAME }}
-#        
-#  deploy_to_production:
-#    if: github.repository_owner == 'Informatievlaanderen'
-#    needs: [deploy_to_production_start_slack, build]
-#    name: Deploy to Production
-#    runs-on: ubuntu-latest
-#    strategy:
-#      matrix: 
-#        services: ['streetname-registry-api', 'streetname-registry-import-api', 'streetname-registry-projections']
-#
-#    steps:
-#    - name: CD services
-#      env:
-#        BUILD_URL: ${{ secrets.VBR_AWS_BUILD_API }}/${{matrix.services}}
-#        STATUS_URL: ${{ secrets.VBR_AWS_BUILD_STATUS_API }}/${{matrix.services}}
-#      uses: informatievlaanderen/awscurl-polling-action/polling-action@main
-#      with:
-#          environment: prd
-#          version: ${{ needs.build.outputs.version }}
-#          status-url: $STATUS_URL
-#          deploy-url: $BUILD_URL
-#          access-key: ${{ secrets.VBR_AWS_BUILD_USER_ACCESS_KEY_ID }}
-#          secret-key: ${{ secrets.VBR_AWS_BUILD_USER_SECRET_ACCESS_KEY }}
-#          region: eu-west-1
-#          interval: 2
-#
-#    - name: output CD services
-#      shell: bash
-#      run: |
-#        echo build-uuid: ${{ steps.awscurl-polling-action.outputs.build-uuid }}
-#        echo Status: ${{ steps.awscurl-polling-action.outputs.status }}
-#        echo ${{ steps.awscurl-polling-action.outputs.final-message }}
-#
-#  deploy_lambda_to_production:
-#    if: github.repository_owner == 'Informatievlaanderen'
-#    needs: [deploy_to_production, build]
-#    name: Deploy lambda to production
-#    runs-on: ubuntu-latest
-#
-#    steps:
-#    - name: CD Lambda(s) Configure credentials
-#      uses: aws-actions/configure-aws-credentials@v1-node16
-#      with:
-#        aws-access-key-id: ${{ secrets.VBR_AWS_ACCESS_KEY_ID_PRD }}
-#        aws-secret-access-key: ${{ secrets.VBR_AWS_SECRET_ACCESS_KEY_PRD }}
-#        aws-region: ${{ secrets.VBR_AWS_REGION_PRD }}
-#        
-#    - name: Prepare Lambda(s)
-#      shell: bash
-#      run: |
-#        echo aws s3 cp s3://s3-vbr-prd-basisregisters-lam-sr-sqsbackofficehandlerfunction/$VERSION/lambda.zip s3://s3-vbr-prd-basisregisters-lam-sr-sqsbackofficehandlerfunction/lambda.zip --copy-props none
-#        aws s3 cp s3://s3-vbr-prd-basisregisters-lam-sr-sqsbackofficehandlerfunction/$VERSION/lambda.zip s3://s3-vbr-prd-basisregisters-lam-sr-sqsbackofficehandlerfunction/lambda.zip --copy-props none
-#      env:
-#        VERSION: ${{ needs.build.outputs.version }}
-#        
-#    - name: Promote Lambda(s)
-#      shell: bash
-#      run: |
-#        echo pulling awscurl docker image
-#        docker pull ghcr.io/okigan/awscurl:latest
-#        echo docker run --rm okigan/awscurl --access_key $ACCESS_KEY_ID --secret_key $SECRET_ACCESS_KEY_ID --region $REGION -X POST -d '{ ""functionName"": ""sr-sqsbackofficehandlerfunction"", ""project"": ""basisregisters"", ""domain"": ""basisregisters"" }' $PROMOTEURL/prd
-#        docker run --rm okigan/awscurl --access_key $ACCESS_KEY_ID --secret_key $SECRET_ACCESS_KEY_ID --region $REGION -X POST -d '{ ""functionName"": ""sr-sqsbackofficehandlerfunction"", ""project"": ""basisregisters"", ""domain"": ""basisregisters"" }' $PROMOTEURL/prd
-#      env:
-#        ACCESS_KEY_ID: ${{ secrets.VBR_AWS_ACCESS_KEY_ID_TST }}
-#        SECRET_ACCESS_KEY_ID: ${{ secrets.VBR_AWS_SECRET_ACCESS_KEY_TST }}
-#        REGION: ${{ secrets.VBR_AWS_REGION_PRD }}
-#        PROMOTEURL: ${{ secrets.VBR_AWS_PROMOTE_LAMBDA_BASEURL }}
-#
-#  deploy_to_production_finish_slack:
-#    if: github.repository_owner == 'Informatievlaanderen'
-#    needs: [deploy_lambda_to_production]
-#    name: Deploy to production finished
-#    runs-on: ubuntu-latest
-#
-#    steps:
-#    - name: Parse repository name
-#      run: echo REPOSITORY_NAME=$(echo """"$GITHUB_REPOSITORY"""" | awk -F / '{print $2}' | sed -e """"s/:refs//"""") >> $GITHUB_ENV
-#      shell: bash
-#
-#    - name: Notify deployment finished
-#      uses: slackapi/slack-github-action@v1.23.0
-#      with:
-#        channel-id: '#team-dinosaur-dev'
-#        slack-message: Deployment of streetname-registry to production finished
-#      env:
-#        SLACK_BOT_TOKEN: ${{ secrets.VBR_SLACK_BOT_TOKEN }}
-#        SLACK_CHANNEL: ${{ secrets.VBR_NOTIFIER_CHANNEL_NAME }}
-#        REPOSITORY_NAME: ${{ env.REPOSITORY_NAME }}
-#
+  deploy_to_production_start_slack:
+    if: github.repository_owner == 'Informatievlaanderen'
+    needs: [push_images_to_production, deploy_to_staging_finish_slack, build]
+    name: Deploy to production started
+    environment: prd
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Parse repository name
+      run: echo REPOSITORY_NAME=$(echo """"$GITHUB_REPOSITORY"""" | awk -F / '{print $2}' | sed -e """"s/:refs//"""") >> $GITHUB_ENV
+      shell: bash
+
+    - name: Notify deployment started
+      uses: slackapi/slack-github-action@v1.23.0
+      with:
+        channel-id: '#team-dinosaur-dev'
+        slack-message: Deployment of streetname-registry to production has started
+      env:
+        SLACK_BOT_TOKEN: ${{ secrets.VBR_SLACK_BOT_TOKEN }}
+        SLACK_CHANNEL: ${{ secrets.VBR_NOTIFIER_CHANNEL_NAME }}
+        REPOSITORY_NAME: ${{ env.REPOSITORY_NAME }}
+        
+  deploy_to_production:
+    if: github.repository_owner == 'Informatievlaanderen'
+    needs: [deploy_to_production_start_slack, build]
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: 
+        services: ['streetname-registry-api', 'streetname-registry-import-api', 'streetname-registry-projections']
+
+    steps:
+    - name: CD services
+      env:
+        BUILD_URL: ${{ secrets.VBR_AWS_BUILD_API }}/${{matrix.services}}
+        STATUS_URL: ${{ secrets.VBR_AWS_BUILD_STATUS_API }}/${{matrix.services}}
+      uses: informatievlaanderen/awscurl-polling-action/polling-action@main
+      with:
+          environment: prd
+          version: ${{ needs.build.outputs.version }}
+          status-url: $STATUS_URL
+          deploy-url: $BUILD_URL
+          access-key: ${{ secrets.VBR_AWS_BUILD_USER_ACCESS_KEY_ID }}
+          secret-key: ${{ secrets.VBR_AWS_BUILD_USER_SECRET_ACCESS_KEY }}
+          region: eu-west-1
+          interval: 2
+
+    - name: output CD services
+      shell: bash
+      run: |
+        echo build-uuid: ${{ steps.awscurl-polling-action.outputs.build-uuid }}
+        echo Status: ${{ steps.awscurl-polling-action.outputs.status }}
+        echo ${{ steps.awscurl-polling-action.outputs.final-message }}
+
+  deploy_lambda_to_production:
+    if: github.repository_owner == 'Informatievlaanderen'
+    needs: [deploy_to_production, build]
+    name: Deploy lambda to production
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: CD Lambda(s) Configure credentials
+      uses: aws-actions/configure-aws-credentials@v1-node16
+      with:
+        aws-access-key-id: ${{ secrets.VBR_AWS_ACCESS_KEY_ID_PRD }}
+        aws-secret-access-key: ${{ secrets.VBR_AWS_SECRET_ACCESS_KEY_PRD }}
+        aws-region: ${{ secrets.VBR_AWS_REGION_PRD }}
+        
+    - name: Prepare Lambda(s)
+      shell: bash
+      run: |
+        echo aws s3 cp s3://s3-vbr-prd-basisregisters-lam-sr-sqsbackofficehandlerfunction/$VERSION/lambda.zip s3://s3-vbr-prd-basisregisters-lam-sr-sqsbackofficehandlerfunction/lambda.zip --copy-props none
+        aws s3 cp s3://s3-vbr-prd-basisregisters-lam-sr-sqsbackofficehandlerfunction/$VERSION/lambda.zip s3://s3-vbr-prd-basisregisters-lam-sr-sqsbackofficehandlerfunction/lambda.zip --copy-props none
+      env:
+        VERSION: ${{ needs.build.outputs.version }}
+        
+    - name: Promote Lambda(s)
+      shell: bash
+      run: |
+        echo pulling awscurl docker image
+        docker pull ghcr.io/okigan/awscurl:latest
+        echo docker run --rm okigan/awscurl --access_key $ACCESS_KEY_ID --secret_key $SECRET_ACCESS_KEY_ID --region $REGION -X POST -d '{ ""functionName"": ""sr-sqsbackofficehandlerfunction"", ""project"": ""basisregisters"", ""domain"": ""basisregisters"" }' $PROMOTEURL/prd
+        docker run --rm okigan/awscurl --access_key $ACCESS_KEY_ID --secret_key $SECRET_ACCESS_KEY_ID --region $REGION -X POST -d '{ ""functionName"": ""sr-sqsbackofficehandlerfunction"", ""project"": ""basisregisters"", ""domain"": ""basisregisters"" }' $PROMOTEURL/prd
+      env:
+        ACCESS_KEY_ID: ${{ secrets.VBR_AWS_ACCESS_KEY_ID_TST }}
+        SECRET_ACCESS_KEY_ID: ${{ secrets.VBR_AWS_SECRET_ACCESS_KEY_TST }}
+        REGION: ${{ secrets.VBR_AWS_REGION_PRD }}
+        PROMOTEURL: ${{ secrets.VBR_AWS_PROMOTE_LAMBDA_BASEURL }}
+
+  deploy_to_production_finish_slack:
+    if: github.repository_owner == 'Informatievlaanderen'
+    needs: [deploy_lambda_to_production]
+    name: Deploy to production finished
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Parse repository name
+      run: echo REPOSITORY_NAME=$(echo """"$GITHUB_REPOSITORY"""" | awk -F / '{print $2}' | sed -e """"s/:refs//"""") >> $GITHUB_ENV
+      shell: bash
+
+    - name: Notify deployment finished
+      uses: slackapi/slack-github-action@v1.23.0
+      with:
+        channel-id: '#team-dinosaur-dev'
+        slack-message: Deployment of streetname-registry to production has finished
+      env:
+        SLACK_BOT_TOKEN: ${{ secrets.VBR_SLACK_BOT_TOKEN }}
+        SLACK_CHANNEL: ${{ secrets.VBR_NOTIFIER_CHANNEL_NAME }}
+        REPOSITORY_NAME: ${{ env.REPOSITORY_NAME }}
+
 ";
 
         var options = new ReleaseGeneratorOptions(
