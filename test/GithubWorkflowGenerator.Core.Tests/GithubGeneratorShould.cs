@@ -1521,14 +1521,11 @@ jobs:
                 new NuGetArtifactAndPackage("projector", "Be.Vlaanderen.Basisregisters.StreetNameRegistry.Projector")
             },
             "/home/runner/work/streetname-registry/streetname-registry/dist/StreetNameRegistry.Api.BackOffice.Handlers.Lambda/linux",
-            new EnvironmentOptions("/home/runner/work/streetname-registry/streetname-registry/dist/StreetNameRegistry.Api.BackOffice.Handlers.Lambda/linux",
-                "s3://s3-vbr-test-basisregisters-lam-sr-sqsbackofficehandlerfunction",
+            new EnvironmentOptions("s3://s3-vbr-test-basisregisters-lam-sr-sqsbackofficehandlerfunction",
                 new[] { "streetname-registry-api", "streetname-registry-import-api", "streetname-registry-projections", "streetname-registry-producer", "streetname-registry-producer-snapshot-oslo" }),
-            new EnvironmentOptions("/home/runner/work/streetname-registry/streetname-registry/dist/StreetNameRegistry.Api.BackOffice.Handlers.Lambda/linux",
-                "s3://s3-vbr-stg-basisregisters-lam-sr-sqsbackofficehandlerfunction",
+            new EnvironmentOptions("s3://s3-vbr-stg-basisregisters-lam-sr-sqsbackofficehandlerfunction",
                 new[] { "streetname-registry-api", "streetname-registry-projections", "streetname-registry-backoffice-api", "streetname-registry-consumer", "streetname-registry-producer", "streetname-registry-migrator-streetname", "streetname-registry-producer-snapshot-oslo" }),
-            new EnvironmentOptions("/home/runner/work/streetname-registry/streetname-registry/dist/StreetNameRegistry.Api.BackOffice.Handlers.Lambda/linux",
-                "s3://s3-vbr-prd-basisregisters-lam-sr-sqsbackofficehandlerfunction",
+            new EnvironmentOptions("s3://s3-vbr-prd-basisregisters-lam-sr-sqsbackofficehandlerfunction",
                 new[] { "streetname-registry-api", "streetname-registry-import-api", "streetname-registry-projections" }));
         var result = await new GithubGenerator().GenerateReleaseWorkflowAsync(options);
 

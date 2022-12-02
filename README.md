@@ -16,17 +16,12 @@ Example:
 gwg release --repositoryName streetname-registry 
   --repositoryPrefix sr 
   --buildArtifacts buildArtifact1 buildArtifact2
-  --nugetPackages 
-    my-package-name-artifact1 My.Package.Name1
-    my-package-name-artifact1 My.Package.Name2
+  --nugetPackages My.Package.Name1 My.Package.Name2
   --lambdaSourceFolder /home/runner/work/streetname-registry/streetname-registry/dist/StreetNameRegistry.Api.BackOffice.Handlers.Lambda/linux
-  --testPublishFolderForLambda /home/runner/work/streetname-registry/streetname-registry/dist/StreetNameRegistry.Api.BackOffice.Handlers.Lambda/linux
   --testS3BucketForLambda s3://my.test.lambda.bucket
   --testServiceMatrix service1 service2 service3
-  --stagingPublishFolderForLambda /home/runner/work/streetname-registry/streetname-registry/dist/StreetNameRegistry.Api.BackOffice.Handlers.Lambda/linux
   --stagingS3BucketForLambda  s3://my.stg.lambda.bucket
   --stagingServiceMatrix service1 service2 service3
-  --productionPublishFolderForLambda /home/runner/work/streetname-registry/streetname-registry/dist/StreetNameRegistry.Api.BackOffice.Handlers.Lambda/linux
   --productionS3BucketForLambda  s3://my.prd.lambda.bucket
   --productionServiceMatrix service1 service2
 ~~~

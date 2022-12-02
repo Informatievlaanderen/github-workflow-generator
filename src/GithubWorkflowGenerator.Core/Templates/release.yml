@@ -175,7 +175,7 @@ jobs:
       shell: bash
       run: |
         echo Push Lambda functions to S3 Test
-        pushd <% PublishFolderForLambdaTest %>
+        pushd <% LambdaSourceFolder %>
         echo aws s3 cp lambda.zip <% S3BucketForLambdaTest %>/$SEMVER/lambda.zip
         aws s3 cp lambda.zip <% S3BucketForLambdaTest %>/$SEMVER/lambda.zip
         popd
@@ -199,7 +199,7 @@ jobs:
       shell: bash
       run: |
         echo Push Lambda functions to S3 Staging
-        pushd <% PublishFolderForLambdaStaging %>
+        pushd <% LambdaSourceFolder %>
         echo aws s3 cp lambda.zip <% S3BucketForLambdaStaging %>/$SEMVER/lambda.zip
         aws s3 cp lambda.zip <% S3BucketForLambdaStaging %>/$SEMVER/lambda.zip
         popd
@@ -223,7 +223,7 @@ jobs:
       shell: bash
       run: |
         echo Push Lambda functions to S3 Production
-        pushd <% PublishFolderForLambdaProduction %>
+        pushd <% LambdaSourceFolder %>
         echo aws s3 cp lambda.zip <% S3BucketForLambdaProduction %>/$SEMVER/lambda.zip
         aws s3 cp lambda.zip <% S3BucketForLambdaProduction %>/$SEMVER/lambda.zip
         popd
