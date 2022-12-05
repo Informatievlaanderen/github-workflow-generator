@@ -4,7 +4,9 @@ using System.Linq;
 
 namespace GithubWorkflowGenerator.Core.Options;
 
-public record ReleaseGeneratorOptions(string RepositoryName, string RepositoryPrefix, IEnumerable<string> BuildArtifacts, IEnumerable<NuGetArtifactAndPackage> NuGetPackages, string LambdaSourceFolder,
+public record ReleaseGeneratorOptions(string WorkflowName, string RepositoryName, string RepositoryPrefix, IEnumerable<string> BuildArtifacts, IEnumerable<NuGetArtifactAndPackage> NuGetPackages,
+    bool SkipLambda,
+    string LambdaSourceFolder,
     EnvironmentOptions Test, EnvironmentOptions Staging, EnvironmentOptions Production);
 
 public static class ReleaseGeneratorOptionsExtensions
@@ -41,10 +43,12 @@ public static class ReleaseGeneratorOptionsExtensions
 
     public static IDictionary<string, object?> ToKeyValues(this ReleaseGeneratorOptions options) => new Dictionary<string, object?>
     {
+        [nameof(options.WorkflowName)] = options.WorkflowName,
         [nameof(options.RepositoryName)] = options.RepositoryName,
         [nameof(options.RepositoryPrefix)] = options.RepositoryPrefix,
         [nameof(options.BuildArtifacts)] = options.BuildArtifacts,
         [nameof(options.NuGetPackages)] = options.NuGetPackages,
+        [nameof(options.SkipLambda)] = options.SkipLambda,
         [nameof(options.LambdaSourceFolder)] = options.LambdaSourceFolder,
         [nameof(options.Test.S3BucketForLambda) + nameof(options.Test)] = options.Test.S3BucketForLambda,
         [nameof(options.Staging.S3BucketForLambda) + nameof(options.Staging)] = options.Staging.S3BucketForLambda,

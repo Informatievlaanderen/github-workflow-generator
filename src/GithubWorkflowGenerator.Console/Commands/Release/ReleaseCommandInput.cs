@@ -7,7 +7,9 @@ using GithubWorkflowGenerator.Console.Extensions;
 
 namespace GithubWorkflowGenerator.Console.Commands.Release;
 
-public record ReleaseCommandInput(string FileName, string RepositoryName, string RepositoryPrefix, List<string> BuildArtifacts, Dictionary<string, string> NuGetPackages, string LambdaSourceFolder,
+public record ReleaseCommandInput(string FileName, string WorkflowName, string RepositoryName, string RepositoryPrefix, List<string> BuildArtifacts, Dictionary<string, string> NuGetPackages,
+    bool SkipLambda,
+    string LambdaSourceFolder,
     string TestS3BucketForLambda, List<string> TestServiceMatrix,
     string StagingS3BucketForLambda, List<string> StagingServiceMatrix,
     string ProductionS3BucketForLambda, List<string> ProductionServiceMatrix);
@@ -15,10 +17,12 @@ public record ReleaseCommandInput(string FileName, string RepositoryName, string
 public class ReleaseCommandInputBinder : BinderBase<ReleaseCommandInput?>
 {
     private readonly Option<string> _fileName;
+    private readonly Option<string> _workflowName;
     private readonly Option<string> _repositoryName;
     private readonly Option<string> _repositoryPrefix;
     private readonly Option<List<string>> _buildArtifacts;
     private readonly Option<List<string>> _nugetPackages;
+    private readonly Option<bool> _skipLambda;
     private readonly Option<string> _lambdaSourceFolder;
     private readonly Option<string> _testS3BucketForLambda;
     private readonly Option<List<string>> _testServiceMatrix;
@@ -27,16 +31,20 @@ public class ReleaseCommandInputBinder : BinderBase<ReleaseCommandInput?>
     private readonly Option<string> _productionS3BucketForLambda;
     private readonly Option<List<string>> _productionServiceMatrix;
 
-    public ReleaseCommandInputBinder(Option<string> fileName, Option<string> repositoryName, Option<string> repositoryPrefix, Option<List<string>> buildArtifacts, Option<List<string>> nugetPackages, Option<string> lambdaSourceFolder,
+    public ReleaseCommandInputBinder(Option<string> fileName, Option<string> workflowName, Option<string> repositoryName, Option<string> repositoryPrefix, Option<List<string>> buildArtifacts, Option<List<string>> nugetPackages,
+        Option<bool> skipLambda,
+        Option<string> lambdaSourceFolder,
         Option<string> testS3BucketForLambda, Option<List<string>> testServiceMatrix,
         Option<string> stagingS3BucketForLambda, Option<List<string>> stagingServiceMatrix,
         Option<string> productionS3BucketForLambda, Option<List<string>> productionServiceMatrix)
     {
         _fileName = fileName;
+        _workflowName = workflowName;
         _repositoryName = repositoryName;
         _repositoryPrefix = repositoryPrefix;
         _buildArtifacts = buildArtifacts;
         _nugetPackages = nugetPackages;
+        _skipLambda = skipLambda;
         _lambdaSourceFolder = lambdaSourceFolder;
         _testS3BucketForLambda = testS3BucketForLambda;
         _testServiceMatrix = testServiceMatrix;
@@ -49,10 +57,12 @@ public class ReleaseCommandInputBinder : BinderBase<ReleaseCommandInput?>
     protected override ReleaseCommandInput? GetBoundValue(BindingContext bindingContext)
     {
         var fileName = bindingContext.ParseResult.GetValueForOption(_fileName);
+        var workflowName = bindingContext.ParseResult.GetValueForOption(_workflowName);
         var repositoryName = bindingContext.ParseResult.GetValueForOption(_repositoryName);
         var repositoryPrefix = bindingContext.ParseResult.GetValueForOption(_repositoryPrefix);
         var buildArtifacts = bindingContext.ParseResult.GetValueForOption(_buildArtifacts);
         var nugetPackages = bindingContext.ParseResult.GetValueForOption(_nugetPackages);
+        var skipLambda = bindingContext.ParseResult.GetValueForOption(_skipLambda);
         var lambdaSourceFolder = bindingContext.ParseResult.GetValueForOption(_lambdaSourceFolder);
         var testS3BucketForLambda = bindingContext.ParseResult.GetValueForOption(_testS3BucketForLambda);
         var testServiceMatrix = bindingContext.ParseResult.GetValueForOption(_testServiceMatrix);
@@ -60,7 +70,7 @@ public class ReleaseCommandInputBinder : BinderBase<ReleaseCommandInput?>
         var stagingServiceMatrix = bindingContext.ParseResult.GetValueForOption(_stagingServiceMatrix);
         var productionS3BucketForLambda = bindingContext.ParseResult.GetValueForOption(_productionS3BucketForLambda);
         var productionServiceMatrix = bindingContext.ParseResult.GetValueForOption(_productionServiceMatrix);
-        if (fileName is null || repositoryName is null || repositoryPrefix is null || buildArtifacts is null
+        if (fileName is null || workflowName is null || repositoryName is null || repositoryPrefix is null || buildArtifacts is null
             || testS3BucketForLambda is null || testServiceMatrix is null
             || stagingS3BucketForLambda is null || stagingServiceMatrix is null
             || productionS3BucketForLambda is null || productionServiceMatrix is null)
@@ -68,7 +78,9 @@ public class ReleaseCommandInputBinder : BinderBase<ReleaseCommandInput?>
             return default;
         }
 
-        return new ReleaseCommandInput(fileName, repositoryName, repositoryPrefix, buildArtifacts, DictionaryFrom(nugetPackages!), lambdaSourceFolder!,
+        return new ReleaseCommandInput(fileName, workflowName, repositoryName, repositoryPrefix, buildArtifacts, DictionaryFrom(nugetPackages!),
+            skipLambda,
+            lambdaSourceFolder!,
             testS3BucketForLambda, testServiceMatrix,
             stagingS3BucketForLambda, stagingServiceMatrix,
             productionS3BucketForLambda, productionServiceMatrix);

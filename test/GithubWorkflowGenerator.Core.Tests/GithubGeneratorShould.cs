@@ -246,6 +246,8 @@ jobs:
     steps:
     - name: Checkout Code
       uses: actions/checkout@v3
+      with:
+          persist-credentials: false
 
     - name: Cache NPM
       uses: actions/cache@v3
@@ -1494,6 +1496,7 @@ jobs:
 ";
 
         var options = new ReleaseGeneratorOptions(
+            "Release",
             "streetname-registry",
             "sr",
             new[]
@@ -1520,6 +1523,7 @@ jobs:
                 new NuGetArtifactAndPackage("api-crab-import", "Be.Vlaanderen.Basisregisters.StreetNameRegistry.Api.CrabImport"),
                 new NuGetArtifactAndPackage("projector", "Be.Vlaanderen.Basisregisters.StreetNameRegistry.Projector")
             },
+            false,
             "/home/runner/work/streetname-registry/streetname-registry/dist/StreetNameRegistry.Api.BackOffice.Handlers.Lambda/linux",
             new EnvironmentOptions("s3://s3-vbr-test-basisregisters-lam-sr-sqsbackofficehandlerfunction",
                 new[] { "streetname-registry-api", "streetname-registry-import-api", "streetname-registry-projections", "streetname-registry-producer", "streetname-registry-producer-snapshot-oslo" }),
