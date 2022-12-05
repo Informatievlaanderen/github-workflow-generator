@@ -1,5 +1,5 @@
 ﻿{{=<% %>=}}
-name: Release
+name: <% WorkflowName %>
 
 on:
   workflow_dispatch:
@@ -15,6 +15,8 @@ jobs:
     steps:
     - name: Checkout Code
       uses: actions/checkout@v3
+      with:
+          persist-credentials: false
 
     - name: Cache NPM
       uses: actions/cache@v3
@@ -148,6 +150,9 @@ jobs:
         path: ~/<% RepositoryPrefix %>-<% . %>-image.tar
 
     <% /BuildArtifacts %>
+
+    <% ^SkipLambda %>
+
     - name: Package Lambda functions        
       if: env.RELEASE_VERSION != 'none'
       shell: bash
@@ -229,6 +234,8 @@ jobs:
         popd
       env:
        SEMVER: ${{ env.RELEASE_VERSION }}
+
+    <% /SkipLambda %>
 
   publish_to_atlassian:
     if: needs.build.outputs.version != 'none'
@@ -553,6 +560,8 @@ jobs:
         echo Status: ${{ steps.awscurl-polling-action.outputs.status }}
         echo ${{ steps.awscurl-polling-action.outputs.final-message }}
 
+  <% ^SkipLambda %>
+
   deploy_lambda_to_test:
     if: github.repository_owner == 'Informatievlaanderen'
     needs: [deploy_to_test, build]
@@ -588,9 +597,11 @@ jobs:
         REGION: ${{ secrets.VBR_AWS_REGION_PRD }}
         PROMOTEURL: ${{ secrets.VBR_AWS_PROMOTE_LAMBDA_BASEURL }}
 
+  <% /SkipLambda %>
+
   deploy_to_test_finish_slack:
     if: github.repository_owner == 'Informatievlaanderen'
-    needs: [deploy_lambda_to_test]
+    needs: <% #SkipLambda %> [deploy_to_test] <% /SkipLambda %> <% ^SkipLambda %> [deploy_lambda_to_test] <% /SkipLambda %>
     name: Deploy to test finished
     runs-on: ubuntu-latest
 
@@ -663,6 +674,8 @@ jobs:
         echo Status: ${{ steps.awscurl-polling-action.outputs.status }}
         echo ${{ steps.awscurl-polling-action.outputs.final-message }}
 
+  <% ^SkipLambda %>
+
   deploy_lambda_to_staging:
     if: github.repository_owner == 'Informatievlaanderen'
     needs: [deploy_to_staging, build]
@@ -698,9 +711,11 @@ jobs:
         REGION: ${{ secrets.VBR_AWS_REGION_PRD }}
         PROMOTEURL: ${{ secrets.VBR_AWS_PROMOTE_LAMBDA_BASEURL }}
 
+  <% /SkipLambda %>
+
   deploy_to_staging_finish_slack:
     if: github.repository_owner == 'Informatievlaanderen'
-    needs: [deploy_lambda_to_staging]
+    needs: <% #SkipLambda %> [deploy_to_staging] <% /SkipLambda %> <% ^SkipLambda %> [deploy_lambda_to_staging] <% /SkipLambda %>
     name: Deploy to staging finished
     runs-on: ubuntu-latest
 
@@ -773,6 +788,8 @@ jobs:
         echo Status: ${{ steps.awscurl-polling-action.outputs.status }}
         echo ${{ steps.awscurl-polling-action.outputs.final-message }}
 
+  <% ^SkipLambda %>
+
   deploy_lambda_to_production:
     if: github.repository_owner == 'Informatievlaanderen'
     needs: [deploy_to_production, build]
@@ -808,9 +825,11 @@ jobs:
         REGION: ${{ secrets.VBR_AWS_REGION_PRD }}
         PROMOTEURL: ${{ secrets.VBR_AWS_PROMOTE_LAMBDA_BASEURL }}
 
+  <% /SkipLambda %>
+
   deploy_to_production_finish_slack:
     if: github.repository_owner == 'Informatievlaanderen'
-    needs: [deploy_lambda_to_production]
+    needs: <% #SkipLambda %> [deploy_to_production] <% /SkipLambda %> <% ^SkipLambda %> [deploy_lambda_to_production] <% /SkipLambda %>
     name: Deploy to production finished
     runs-on: ubuntu-latest
 
