@@ -6,6 +6,8 @@ namespace GithubWorkflowGenerator.Core.Options;
 
 public record ReleaseGeneratorOptions(string WorkflowName, string RepositoryName, string RepositoryPrefix, IEnumerable<string> BuildArtifacts, IEnumerable<NuGetArtifactAndPackage> NuGetPackages,
     bool SkipLambda,
+    string JiraPrefix,
+    string JiraProject,
     string LambdaSourceFolder,
     EnvironmentOptions Test, EnvironmentOptions Staging, EnvironmentOptions Production);
 
@@ -49,6 +51,8 @@ public static class ReleaseGeneratorOptionsExtensions
         [nameof(options.BuildArtifacts)] = options.BuildArtifacts,
         [nameof(options.NuGetPackages)] = options.NuGetPackages,
         [nameof(options.SkipLambda)] = options.SkipLambda,
+        [nameof(options.JiraPrefix)] = options.JiraPrefix,
+        [nameof(options.JiraProject)] = options.JiraProject,
         [nameof(options.LambdaSourceFolder)] = options.LambdaSourceFolder,
         [nameof(options.Test.S3BucketForLambda) + nameof(options.Test)] = options.Test.S3BucketForLambda,
         [nameof(options.Staging.S3BucketForLambda) + nameof(options.Staging)] = options.Staging.S3BucketForLambda,

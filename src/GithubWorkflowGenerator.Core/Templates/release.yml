@@ -296,8 +296,8 @@ jobs:
           CONFLUENCE_TITLE: ${{ env.REPOSITORY_NAME }}
           CONFLUENCE_USERNAME: ${{ secrets.VBR_CONFLUENCE_USER }}
           CONFLUENCE_PASSWORD: ${{ secrets.VBR_CONFLUENCE_PASSWORD }}
-          JIRA_PREFIX: StreetName
-          JIRA_PROJECT: GAWR
+          JIRA_PREFIX: <% JiraPrefix %>
+          JIRA_PROJECT: <% JiraProject %>
           JIRA_VERSION: ${{ needs.build.outputs.version }}
 
   publish_to_nuget:
