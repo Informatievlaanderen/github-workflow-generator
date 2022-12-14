@@ -1524,6 +1524,8 @@ jobs:
                 new NuGetArtifactAndPackage("projector", "Be.Vlaanderen.Basisregisters.StreetNameRegistry.Projector")
             },
             false,
+            "StreetName",
+            "GAWR",
             "/home/runner/work/streetname-registry/streetname-registry/dist/StreetNameRegistry.Api.BackOffice.Handlers.Lambda/linux",
             new EnvironmentOptions("s3://s3-vbr-test-basisregisters-lam-sr-sqsbackofficehandlerfunction",
                 new[] { "streetname-registry-api", "streetname-registry-import-api", "streetname-registry-projections", "streetname-registry-producer", "streetname-registry-producer-snapshot-oslo" }),
@@ -1681,7 +1683,9 @@ jobs:
             { 
                 "Be.Vlaanderen.Basisregisters.Sqs",
                 "Be.Vlaanderen.Basisregisters.Sqs.Lambda"
-            });
+            },
+            "Address",
+            "GAWR");
         var result = await new GithubGenerator().GenerateReleaseLibWorkflowAsync(options);
 
         Assert.NotNull(result);

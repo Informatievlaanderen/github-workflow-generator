@@ -131,6 +131,6 @@ jobs:
         CONFLUENCE_TITLE: ${{ env.REPOSITORY_NAME }}
         CONFLUENCE_USERNAME: ${{ secrets.VBR_CONFLUENCE_USER }}
         CONFLUENCE_PASSWORD: ${{ secrets.VBR_CONFLUENCE_PASSWORD }}
-        JIRA_PREFIX: Address
-        JIRA_PROJECT: GAWR
+        JIRA_PREFIX: <% JiraPrefix %>
+        JIRA_PROJECT: <% JiraProject %>
         JIRA_VERSION: ${{ env.RELEASE_VERSION }}

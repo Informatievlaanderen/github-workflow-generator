@@ -9,6 +9,8 @@ namespace GithubWorkflowGenerator.Console.Commands.Release;
 
 public record ReleaseCommandInput(string FileName, string WorkflowName, string RepositoryName, string RepositoryPrefix, List<string> BuildArtifacts, Dictionary<string, string> NuGetPackages,
     bool SkipLambda,
+    string JiraPrefix,
+    string JiraProject,
     string LambdaSourceFolder,
     string TestS3BucketForLambda, List<string> TestServiceMatrix,
     string StagingS3BucketForLambda, List<string> StagingServiceMatrix,
@@ -23,6 +25,8 @@ public class ReleaseCommandInputBinder : BinderBase<ReleaseCommandInput?>
     private readonly Option<List<string>> _buildArtifacts;
     private readonly Option<List<string>> _nugetPackages;
     private readonly Option<bool> _skipLambda;
+    private readonly Option<string> _jiraPrefix;
+    private readonly Option<string> _jiraProject;
     private readonly Option<string> _lambdaSourceFolder;
     private readonly Option<string> _testS3BucketForLambda;
     private readonly Option<List<string>> _testServiceMatrix;
@@ -33,6 +37,8 @@ public class ReleaseCommandInputBinder : BinderBase<ReleaseCommandInput?>
 
     public ReleaseCommandInputBinder(Option<string> fileName, Option<string> workflowName, Option<string> repositoryName, Option<string> repositoryPrefix, Option<List<string>> buildArtifacts, Option<List<string>> nugetPackages,
         Option<bool> skipLambda,
+        Option<string> jiraPrefix,
+        Option<string> jiraProject,
         Option<string> lambdaSourceFolder,
         Option<string> testS3BucketForLambda, Option<List<string>> testServiceMatrix,
         Option<string> stagingS3BucketForLambda, Option<List<string>> stagingServiceMatrix,
@@ -45,6 +51,8 @@ public class ReleaseCommandInputBinder : BinderBase<ReleaseCommandInput?>
         _buildArtifacts = buildArtifacts;
         _nugetPackages = nugetPackages;
         _skipLambda = skipLambda;
+        _jiraPrefix = jiraPrefix;
+        _jiraProject = jiraProject;
         _lambdaSourceFolder = lambdaSourceFolder;
         _testS3BucketForLambda = testS3BucketForLambda;
         _testServiceMatrix = testServiceMatrix;
@@ -63,6 +71,8 @@ public class ReleaseCommandInputBinder : BinderBase<ReleaseCommandInput?>
         var buildArtifacts = bindingContext.ParseResult.GetValueForOption(_buildArtifacts);
         var nugetPackages = bindingContext.ParseResult.GetValueForOption(_nugetPackages);
         var skipLambda = bindingContext.ParseResult.GetValueForOption(_skipLambda);
+        var jiraPrefix = bindingContext.ParseResult.GetValueForOption(_jiraPrefix);
+        var jiraProject = bindingContext.ParseResult.GetValueForOption(_jiraProject);
         var lambdaSourceFolder = bindingContext.ParseResult.GetValueForOption(_lambdaSourceFolder);
         var testS3BucketForLambda = bindingContext.ParseResult.GetValueForOption(_testS3BucketForLambda);
         var testServiceMatrix = bindingContext.ParseResult.GetValueForOption(_testServiceMatrix);
@@ -71,6 +81,7 @@ public class ReleaseCommandInputBinder : BinderBase<ReleaseCommandInput?>
         var productionS3BucketForLambda = bindingContext.ParseResult.GetValueForOption(_productionS3BucketForLambda);
         var productionServiceMatrix = bindingContext.ParseResult.GetValueForOption(_productionServiceMatrix);
         if (fileName is null || workflowName is null || repositoryName is null || repositoryPrefix is null || buildArtifacts is null
+            || jiraPrefix is null || jiraProject is null
             || testS3BucketForLambda is null || testServiceMatrix is null
             || stagingS3BucketForLambda is null || stagingServiceMatrix is null
             || productionS3BucketForLambda is null || productionServiceMatrix is null)
@@ -80,6 +91,8 @@ public class ReleaseCommandInputBinder : BinderBase<ReleaseCommandInput?>
 
         return new ReleaseCommandInput(fileName, workflowName, repositoryName, repositoryPrefix, buildArtifacts, DictionaryFrom(nugetPackages!),
             skipLambda,
+            jiraPrefix,
+            jiraProject,
             lambdaSourceFolder!,
             testS3BucketForLambda, testServiceMatrix,
             stagingS3BucketForLambda, stagingServiceMatrix,
