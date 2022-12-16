@@ -1542,7 +1542,7 @@ jobs:
     [Fact]
     public async Task GenerateReleaseLibWorkflow()
     {
-        const string expected = @"name: Release Library
+        const string expected = @"name: Release
 
 on:
   workflow_dispatch:
@@ -1550,7 +1550,7 @@ on:
 jobs:
   build:
     if: github.repository_owner == 'Informatievlaanderen'
-    name: Build
+    name: Release
     runs-on: ubuntu-latest
 
     steps:
@@ -1679,6 +1679,7 @@ jobs:
 ";
 
         var options = new ReleaseLibGeneratorOptions(
+            "Release",
             new[]
             { 
                 "Be.Vlaanderen.Basisregisters.Sqs",
