@@ -1,5 +1,5 @@
 ﻿{{=<% %>=}}
-name: Release Library
+name: Release
 
 on:
   workflow_dispatch:
@@ -7,7 +7,7 @@ on:
 jobs:
   build:
     if: github.repository_owner == 'Informatievlaanderen'
-    name: Build
+    name: <% WorkflowName %>
     runs-on: ubuntu-latest
 
     steps:
